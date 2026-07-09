@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kingshot Upgrade Planner</title>
+<style>
+:root{
+  --bg:#0e1013; --bg2:#15181e; --card:#1a1e26; --card2:#20242e; --border:#2c313d;
+  --gold:#d9a93f; --gold2:#f0c96a; --text:#e8e6e0; --muted:#9aa0ac; --dim:#6b7280;
+  --green:#5fb56a; --amber:#e0a93e; --red:#e06c5f; --blue:#5f9de0;
+  --bread:#e0b25f; --wood:#8fb56a; --stone:#9aa5b5; --iron:#7fc4d4; --tg:#f0c96a; --ttg:#ff9d5c;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;font-size:15px;line-height:1.45;padding-bottom:60px}
+header{background:linear-gradient(180deg,#1a1610 0%,var(--bg) 100%);border-bottom:1px solid var(--border);padding:22px 20px 14px;text-align:center}
+header h1{font-size:26px;color:var(--gold2);letter-spacing:.5px;font-weight:700}
+header p{color:var(--muted);font-size:13px;margin-top:4px}
+.legend{display:flex;gap:14px;justify-content:center;margin-top:8px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+nav{position:sticky;top:0;z-index:50;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;justify-content:center;flex-wrap:wrap;gap:2px;padding:6px 8px}
+nav button{background:none;border:none;color:var(--muted);font-size:13.5px;font-weight:600;padding:9px 12px;border-radius:8px;cursor:pointer;transition:.15s}
+nav button:hover{color:var(--text);background:var(--card)}
+nav button.active{color:var(--gold2);background:var(--card2)}
+main{max-width:1180px;margin:0 auto;padding:20px 16px}
+section.tab{display:none}
+section.tab.active{display:block}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:16px}
+.card h2{font-size:17px;color:var(--gold2);margin-bottom:10px}
+.card h3{font-size:14px;color:var(--text);margin:12px 0 6px}
+.hint{color:var(--muted);font-size:12.5px;margin:4px 0 10px}
+.dayrec{background:#16211a;border:1px solid #2c4a34;border-radius:8px;padding:8px 12px;font-size:12.5px;color:#8fd19a;margin:8px 0}
+.warn{background:#2a2016;border:1px solid #6b5220;border-radius:8px;padding:8px 12px;font-size:13px;color:var(--gold2);margin:8px 0}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.chip{background:var(--card2);border:1px solid var(--border);color:var(--muted);border-radius:20px;padding:6px 14px;font-size:13.5px;font-weight:600;cursor:pointer;transition:.15s}
+.chip:hover{color:var(--text)}
+.chip.active{background:#2b2415;border-color:var(--gold);color:var(--gold2)}
+.controls{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin:8px 0 4px}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+select,input[type=number]{background:var(--bg2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:7px 10px;font-size:14px;min-width:100px}
+select:focus,input:focus{outline:1px solid var(--gold);border-color:var(--gold)}
+input[type=number]{width:96px;min-width:64px}
+.btn{background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer}
+.btn:hover{border-color:var(--gold);color:var(--gold2)}
+.btn.small{padding:4px 10px;font-size:12px}
+.info{cursor:help;color:var(--blue);font-size:13px;border-bottom:1px dotted var(--blue)}
+.totals{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:14px 0 6px}
+.total-card{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;text-align:center}
+.total-card .tc-label{font-size:11.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.total-card .tc-value{font-size:19px;font-weight:700;margin-top:2px}
+.total-card .tc-exact{font-size:11px;color:var(--dim);margin-top:1px}
+.total-card .tc-net{font-size:11px;margin-top:2px}
+.net-ok{color:var(--green)} .net-short{color:var(--red)}
+table{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:8px}
+th{background:var(--card2);color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.4px;padding:7px 9px;text-align:right;position:sticky;top:48px}
+th:first-child,td:first-child{text-align:left}
+td{padding:6px 9px;border-bottom:1px solid #232833;text-align:right;white-space:nowrap}
+tr:hover td{background:#1e222c}
+tr.total-row td{border-top:2px solid var(--gold);font-weight:700;color:var(--gold2);background:#211d12}
+.tbl-wrap{overflow-x:auto;max-height:520px;overflow-y:auto;border:1px solid var(--border);border-radius:8px}
+.tbl-wrap table{margin-top:0}
+.tbl-wrap th{top:0}
+.badge{display:inline-block;font-size:11px;border-radius:4px;padding:0 5px;margin-left:5px;font-weight:700;cursor:help}
+.badge.v{color:var(--green)} .badge.s{color:var(--amber)} .badge.c{color:var(--red)}
+.piece-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(265px,1fr));gap:12px;margin-top:8px}
+.piece{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:10px 12px}
+.piece h4{font-size:13.5px;color:var(--text);margin-bottom:6px}
+.piece .cls{font-size:11px;color:var(--muted);font-weight:400}
+.piece .row{display:flex;gap:6px;align-items:center;margin-top:6px;flex-wrap:wrap}
+.piece .row label{font-size:11.5px;color:var(--muted);min-width:44px}
+.piece select,.piece input{flex:1;min-width:70px;padding:5px 7px;font-size:13px}
+.piece .cost{font-size:12px;color:var(--gold2);margin-top:6px}
+.inf{border-left:3px solid #c46a5a}.cav{border-left:3px solid #5a9dc4}.arc{border-left:3px solid #7fb56a}
+.inv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.inv-item{display:flex;flex-direction:column;gap:3px;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:8px 10px}
+.inv-item label{font-size:11.5px;color:var(--muted);font-weight:600}
+.master-card h3{color:var(--gold2);font-size:15px;margin-top:0}
+.skill-row{display:flex;align-items:center;gap:8px;margin:5px 0;flex-wrap:wrap}
+.skill-row .sk-name{flex:1;min-width:150px;font-size:13px}
+.skill-row .sk-cost{font-size:12px;color:var(--muted);min-width:150px;text-align:right}
+.opp{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin:8px 0;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.opp .opp-pts{font-size:17px;font-weight:700;color:#c9a4e0;min-width:90px;text-align:right}
+.opp .opp-main{flex:1;min-width:220px}
+.opp .opp-miss{font-size:12px;color:var(--red)}
+.opp .opp-have{font-size:12px;color:var(--green)}
+.opp .opp-day{font-size:11px;color:var(--dim)}
+.pts{color:#c9a4e0}
+.total-card .tc-value.pts{color:#c9a4e0}
+footer{max-width:1180px;margin:26px auto 0;padding:0 16px;color:var(--dim);font-size:12px}
+footer a{color:var(--muted)}
+.num{font-variant-numeric:tabular-nums}
+.res-b{color:var(--bread)}.res-w{color:var(--wood)}.res-s{color:var(--stone)}.res-i{color:var(--iron)}.res-tg{color:var(--tg)}.res-tt{color:var(--ttg)}
+.prereq{font-size:11.5px;color:var(--dim);white-space:normal}
+.savebar{position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--border);padding:6px 16px;font-size:12px;color:var(--dim);display:flex;justify-content:space-between;align-items:center;z-index:40;gap:10px;flex-wrap:wrap}
+#report-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;overflow-y:auto;padding:24px 12px}
+#report-overlay.open{display:block}
+#report-box{max-width:820px;margin:0 auto;background:#fff;color:#1a1a1a;border-radius:10px;padding:28px 32px;font-size:12.5px;line-height:1.4}
+#report-box h1{font-size:19px;margin-bottom:2px;color:#1a1a1a}
+#report-box .rp-sub{color:#666;font-size:11px;margin-bottom:14px}
+#report-box h2{font-size:13.5px;margin:14px 0 5px;color:#8a6d1f;border-bottom:2px solid #d9a93f;padding-bottom:2px}
+#report-box table{width:100%;border-collapse:collapse;font-size:11.5px;margin-top:2px}
+#report-box th{background:#f3ead2;color:#5a4a1a;padding:4px 7px;text-align:right;font-size:10px;text-transform:uppercase;position:static}
+#report-box th:first-child,#report-box td:first-child{text-align:left}
+#report-box td{padding:3px 7px;border-bottom:1px solid #e5e0d0;text-align:right;color:#1a1a1a;white-space:nowrap}
+#report-box tr:hover td{background:none}
+#report-box tr.total-row td{border-top:2px solid #d9a93f;font-weight:700;color:#6b520f;background:#faf5e6}
+#report-box .rp-note{color:#777;font-size:10.5px;margin-top:3px}
+.rp-actions{max-width:820px;margin:0 auto 10px;display:flex;gap:10px;justify-content:flex-end}
+.rp-actions .btn{background:#fff;color:#1a1a1a;border-color:#999}
+@media print{
+  body>*{display:none !important}
+  #report-overlay{display:block !important;position:static;background:#fff;padding:0;overflow:visible}
+  .rp-actions{display:none !important}
+  #report-box{border-radius:0;padding:0;max-width:none}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>⚔️ Kingshot Upgrade Planner</h1>
+  <p>Buildings to True Gold 8 · Governor Gear &amp; Charms · Hero Gear · Heroes &amp; Masters · Event Points — data researched July 2026</p>
+  <div class="legend">
+    <span><b class="badge v">✓</b> verified (2+ sources)</span>
+    <span><b class="badge s">⚠</b> single source</span>
+    <span><b class="badge c">✖</b> sources conflict (hover for details)</span>
+    <span>Targets default to "no increase" — raise a target to see costs.</span>
+  </div>
+</header>
+<nav id="nav"></nav>
+<main id="main"></main>
+<footer id="footer"></footer>
+<div class="savebar">
+  <span>Entries save automatically in this browser. Use Save/Load to move between devices.</span>
+  <span style="display:flex;gap:8px;flex-wrap:wrap">
+    <button class="btn small" style="border-color:var(--gold);color:var(--gold2)" onclick="openReport()">📄 Export report</button>
+    <button class="btn small" onclick="saveProfile()">💾 Save profile</button>
+    <button class="btn small" onclick="document.getElementById('profile-file').click()">📂 Load profile</button>
+    <input type="file" id="profile-file" accept=".json" style="display:none">
+    <button class="btn small" onclick="resetAll()">Reset all</button>
+  </span>
+</div>
+<div id="report-overlay">
+  <div class="rp-actions">
+    <button class="btn" onclick="window.print()">🖨 Print / Save as PDF</button>
+    <button class="btn" onclick="downloadReport()">⬇ Download HTML</button>
+    <button class="btn" onclick="document.getElementById('report-overlay').classList.remove('open')">✕ Close</button>
+  </div>
+  <div id="report-box"></div>
+</div>
+<script>
+const DATA = {"buildings":{"Town Center":[{"l":"1","b":0,"w":0,"s":0,"i":0,"tg":0,"tt":0,"t":0,"p":[],"c":"v","n":"Starting level (power 2,000)"},{"l":"2","b":0,"w":180,"s":0,"i":0,"tg":0,"tt":0,"t":6,"p":[["Sawmill","1"]],"c":"v","n":""},{"l":"3","b":0,"w":805,"s":0,"i":0,"tg":0,"tt":0,"t":60,"p":[["House 1","2"]],"c":"v","n":""},{"l":"4","b":0,"w":1800,"s":360,"i":0,"tg":0,"tt":0,"t":180,"p":[["Quarry","3"]],"c":"v","n":""},{"l":"5","b":0,"w":7600,"s":1500,"i":0,"tg":0,"tt":0,"t":600,"p":[["Hero Hall","1"],["House 3","3"]],"c":"v","n":""},{"l":"6","b":0,"w":19000,"s":3800,"i":960,"tg":0,"tt":0,"t":1800,"p":[["Iron Mine","5"]],"c":"v","n":""},{"l":"7","b":0,"w":69000,"s":13000,"i":3400,"tg":0,"tt":0,"t":3600,"p":[["Mill","6"]],"c":"v","n":""},{"l":"8","b":0,"w":120000,"s":25000,"i":6300,"tg":0,"tt":0,"t":9000,"p":[["Barracks","7"]],"c":"v","n":""},{"l":"9","b":0,"w":260000,"s":52000,"i":13000,"tg":0,"tt":0,"t":16200,"p":[["Embassy","8"],["Infirmary","1"]],"c":"v","n":""},{"l":"10","b":0,"w":460000,"s":92000,"i":23000,"tg":0,"tt":0,"t":21600,"p":[["Range","9"],["Academy","1"]],"c":"v","n":""},{"l":"11","b":1300000,"w":1300000,"s":20000,"i":65000,"tg":0,"tt":0,"t":27000,"p":[["Embassy","10"],["Stable","10"]],"c":"v","n":"Stone value 20k looks anomalous vs neighboring levels (TC10=92k, TC12=330k) but is shown identically on both sources."},{"l":"12","b":1600000,"w":1600000,"s":330000,"i":84000,"tg":0,"tt":0,"t":32400,"p":[["Embassy","11"],["Command Center","1"]],"c":"v","n":""},{"l":"13","b":2300000,"w":2300000,"s":470000,"i":110000,"tg":0,"tt":0,"t":39600,"p":[["Embassy","12"],["Barracks","12"]],"c":"v","n":""},{"l":"14","b":3100000,"w":3100000,"s":630000,"i":150000,"tg":0,"tt":0,"t":50400,"p":[["Embassy","13"],["Range","13"]],"c":"v","n":""},{"l":"15","b":4600000,"w":4600000,"s":930000,"i":230000,"tg":0,"tt":0,"t":64800,"p":[["Embassy","14"],["Stable","14"]],"c":"v","n":""},{"l":"16","b":5900000,"w":5900000,"s":1100000,"i":290000,"tg":0,"tt":0,"t":109680,"p":[["Embassy","15"],["Academy","15"]],"c":"v","n":""},{"l":"17","b":9300000,"w":9300000,"s":1800000,"i":480000,"tg":0,"tt":0,"t":131640,"p":[["Embassy","16"],["Barracks","16"]],"c":"v","n":""},{"l":"18","b":12000000,"w":12000000,"s":2500000,"i":620000,"tg":0,"tt":0,"t":157980,"p":[["Embassy","17"],["Range","17"]],"c":"v","n":""},{"l":"19","b":15000000,"w":15000000,"s":3100000,"i":780000,"tg":0,"tt":0,"t":237000,"p":[["Embassy","18"],["Stable","18"]],"c":"v","n":""},{"l":"20","b":21000000,"w":21000000,"s":4300000,"i":1000000,"tg":0,"tt":0,"t":296280,"p":[["Embassy","19"],["Academy","19"]],"c":"v","n":""},{"l":"21","b":27000000,"w":27000000,"s":5400000,"i":1300000,"tg":0,"tt":0,"t":385140,"p":[["Embassy","20"],["Barracks","20"]],"c":"v","n":""},{"l":"22","b":36000000,"w":36000000,"s":7200000,"i":1800000,"tg":0,"tt":0,"t":577740,"p":[["Embassy","21"],["Range","21"]],"c":"v","n":""},{"l":"23","b":44000000,"w":44000000,"s":8900000,"i":2200000,"tg":0,"tt":0,"t":808800,"p":[["Embassy","22"],["Stable","22"]],"c":"v","n":""},{"l":"24","b":60000000,"w":60000000,"s":12000000,"i":3000000,"tg":0,"tt":0,"t":1132380,"p":[["Embassy","23"],["Academy","23"]],"c":"v","n":""},{"l":"25","b":81000000,"w":81000000,"s":16000000,"i":4000000,"tg":0,"tt":0,"t":1585320,"p":[["Embassy","24"],["Barracks","24"]],"c":"v","n":""},{"l":"26","b":100000000,"w":100000000,"s":21000000,"i":5200000,"tg":0,"tt":0,"t":1823160,"p":[["Embassy","25"],["Range","25"]],"c":"v","n":""},{"l":"27","b":140000000,"w":140000000,"s":24000000,"i":7400000,"tg":0,"tt":0,"t":2187780,"p":[["Embassy","26"],["Stable","26"]],"c":"v","n":""},{"l":"28","b":190000000,"w":190000000,"s":39000000,"i":9900000,"tg":0,"tt":0,"t":2515920,"p":[["Embassy","27"],["Academy","27"]],"c":"v","n":""},{"l":"29","b":240000000,"w":240000000,"s":49000000,"i":12000000,"tg":0,"tt":0,"t":2893320,"p":[["Embassy","28"],["Barracks","28"]],"c":"v","n":""},{"l":"30","b":300000000,"w":300000000,"s":60000000,"i":15000000,"tg":0,"tt":0,"t":3472020,"p":[["Embassy","29"],["Range","29"]],"c":"v","n":""},{"l":"30-1","b":67000000,"w":67000000,"s":13000000,"i":3300000,"tg":132,"tt":0,"t":604800,"p":[["Embassy","30"],["Academy","30"]],"c":"v","n":""},{"l":"30-2","b":67000000,"w":67000000,"s":13000000,"i":3300000,"tg":132,"tt":0,"t":604800,"p":[["Embassy","30"],["Academy","30"]],"c":"v","n":""},{"l":"30-3","b":67000000,"w":67000000,"s":13000000,"i":3300000,"tg":132,"tt":0,"t":604800,"p":[["Embassy","30"],["Academy","30"]],"c":"v","n":""},{"l":"30-4","b":67000000,"w":67000000,"s":13000000,"i":3300000,"tg":132,"tt":0,"t":604800,"p":[["Embassy","30"],["Academy","30"]],"c":"v","n":""},{"l":"TG1","b":67000000,"w":67000000,"s":13000000,"i":3300000,"tg":132,"tt":0,"t":604800,"p":[["Embassy","30"],["Academy","30"]],"c":"v","n":"Final step of this TG band."},{"l":"TG1-1","b":72000000,"w":72000000,"s":14000000,"i":3600000,"tg":158,"tt":0,"t":777600,"p":[["Embassy","TG1"],["Stable","TG1"]],"c":"v","n":""},{"l":"TG1-2","b":72000000,"w":72000000,"s":14000000,"i":3600000,"tg":158,"tt":0,"t":777600,"p":[["Embassy","TG1"],["Stable","TG1"]],"c":"v","n":""},{"l":"TG1-3","b":72000000,"w":72000000,"s":14000000,"i":3600000,"tg":158,"tt":0,"t":777600,"p":[["Embassy","TG1"],["Stable","TG1"]],"c":"v","n":""},{"l":"TG1-4","b":72000000,"w":72000000,"s":14000000,"i":3600000,"tg":158,"tt":0,"t":777600,"p":[["Embassy","TG1"],["Stable","TG1"]],"c":"v","n":""},{"l":"TG2","b":72000000,"w":72000000,"s":14000000,"i":3600000,"tg":158,"tt":0,"t":777600,"p":[["Embassy","TG1"],["Stable","TG1"]],"c":"v","n":"Final step of this TG band."},{"l":"TG2-1","b":79000000,"w":79000000,"s":15000000,"i":3900000,"tg":238,"tt":0,"t":950400,"p":[["Embassy","TG2"],["Barracks","TG2"]],"c":"v","n":""},{"l":"TG2-2","b":79000000,"w":79000000,"s":15000000,"i":3900000,"tg":238,"tt":0,"t":950400,"p":[["Embassy","TG2"],["Barracks","TG2"]],"c":"v","n":""},{"l":"TG2-3","b":79000000,"w":79000000,"s":15000000,"i":3900000,"tg":238,"tt":0,"t":950400,"p":[["Embassy","TG2"],["Barracks","TG2"]],"c":"v","n":""},{"l":"TG2-4","b":79000000,"w":79000000,"s":15000000,"i":3900000,"tg":238,"tt":0,"t":950400,"p":[["Embassy","TG2"],["Barracks","TG2"]],"c":"v","n":""},{"l":"TG3","b":79000000,"w":79000000,"s":15000000,"i":3900000,"tg":238,"tt":0,"t":950400,"p":[["Embassy","TG2"],["Barracks","TG2"]],"c":"v","n":"Final step of this TG band."},{"l":"TG3-1","b":82000000,"w":82000000,"s":16000000,"i":4100000,"tg":280,"tt":0,"t":1036800,"p":[["Embassy","TG3"],["Range","TG3"]],"c":"v","n":""},{"l":"TG3-2","b":82000000,"w":82000000,"s":16000000,"i":4100000,"tg":280,"tt":0,"t":1036800,"p":[["Embassy","TG3"],["Range","TG3"]],"c":"v","n":""},{"l":"TG3-3","b":82000000,"w":82000000,"s":16000000,"i":4100000,"tg":280,"tt":0,"t":1036800,"p":[["Embassy","TG3"],["Range","TG3"]],"c":"v","n":""},{"l":"TG3-4","b":82000000,"w":82000000,"s":16000000,"i":4100000,"tg":280,"tt":0,"t":1036800,"p":[["Embassy","TG3"],["Range","TG3"]],"c":"v","n":""},{"l":"TG4","b":82000000,"w":82000000,"s":16000000,"i":4100000,"tg":280,"tt":0,"t":1036800,"p":[["Embassy","TG3"],["Range","TG3"]],"c":"v","n":"Final step of this TG band."},{"l":"TG4-1","b":84000000,"w":84000000,"s":16000000,"i":4200000,"tg":335,"tt":0,"t":1209600,"p":[["Embassy","TG4"],["Stable","TG4"]],"c":"v","n":""},{"l":"TG4-2","b":84000000,"w":84000000,"s":16000000,"i":4200000,"tg":335,"tt":0,"t":1209600,"p":[["Embassy","TG4"],["Stable","TG4"]],"c":"v","n":""},{"l":"TG4-3","b":84000000,"w":84000000,"s":16000000,"i":4200000,"tg":335,"tt":0,"t":1209600,"p":[["Embassy","TG4"],["Stable","TG4"]],"c":"v","n":""},{"l":"TG4-4","b":84000000,"w":84000000,"s":16000000,"i":4200000,"tg":335,"tt":0,"t":1209600,"p":[["Embassy","TG4"],["Stable","TG4"]],"c":"v","n":""},{"l":"TG5","b":84000000,"w":84000000,"s":16000000,"i":4200000,"tg":335,"tt":0,"t":1209600,"p":[["Embassy","TG4"],["Stable","TG4"]],"c":"v","n":"Final step of this TG band."},{"l":"TG5-1","b":96000000,"w":96000000,"s":19000000,"i":4800000,"tg":200,"tt":10,"t":1296000,"p":[["Embassy","TG5"],["Barracks","TG5"]],"c":"v","n":""},{"l":"TG5-2","b":96000000,"w":96000000,"s":19000000,"i":4800000,"tg":200,"tt":10,"t":1296000,"p":[["Embassy","TG5"],["Barracks","TG5"]],"c":"v","n":""},{"l":"TG5-3","b":96000000,"w":96000000,"s":19000000,"i":4800000,"tg":200,"tt":10,"t":1296000,"p":[["Embassy","TG5"],["Barracks","TG5"]],"c":"v","n":""},{"l":"TG5-4","b":96000000,"w":96000000,"s":19000000,"i":4800000,"tg":200,"tt":10,"t":1296000,"p":[["Embassy","TG5"],["Barracks","TG5"]],"c":"v","n":""},{"l":"TG6","b":96000000,"w":96000000,"s":19000000,"i":4800000,"tg":100,"tt":20,"t":1296000,"p":[["Embassy","TG5"],["Barracks","TG5"]],"c":"v","n":"Final step of this TG band."},{"l":"TG6-1","b":100000000,"w":100000000,"s":21000000,"i":5400000,"tg":240,"tt":15,"t":1555200,"p":[["Embassy","TG6"],["Range","TG6"]],"c":"v","n":""},{"l":"TG6-2","b":100000000,"w":100000000,"s":21000000,"i":5400000,"tg":240,"tt":15,"t":1555200,"p":[["Embassy","TG6"],["Range","TG6"]],"c":"v","n":""},{"l":"TG6-3","b":100000000,"w":100000000,"s":21000000,"i":5400000,"tg":240,"tt":15,"t":1555200,"p":[["Embassy","TG6"],["Range","TG6"]],"c":"v","n":""},{"l":"TG6-4","b":100000000,"w":100000000,"s":21000000,"i":5400000,"tg":240,"tt":15,"t":1555200,"p":[["Embassy","TG6"],["Range","TG6"]],"c":"v","n":""},{"l":"TG7","b":100000000,"w":100000000,"s":21000000,"i":5400000,"tg":120,"tt":30,"t":1555200,"p":[["Embassy","TG6"],["Range","TG6"]],"c":"v","n":"Final step of this TG band."},{"l":"TG7-1","b":130000000,"w":130000000,"s":26000000,"i":6600000,"tg":240,"tt":20,"t":1728000,"p":[["Embassy","TG7"],["Stable","TG7"]],"c":"v","n":""},{"l":"TG7-2","b":130000000,"w":130000000,"s":26000000,"i":6600000,"tg":240,"tt":20,"t":1728000,"p":[["Embassy","TG7"],["Stable","TG7"]],"c":"v","n":""},{"l":"TG7-3","b":130000000,"w":130000000,"s":26000000,"i":6600000,"tg":240,"tt":20,"t":1728000,"p":[["Embassy","TG7"],["Stable","TG7"]],"c":"v","n":""},{"l":"TG7-4","b":130000000,"w":130000000,"s":26000000,"i":6600000,"tg":240,"tt":20,"t":1728000,"p":[["Embassy","TG7"],["Stable","TG7"]],"c":"v","n":""},{"l":"TG8","b":130000000,"w":130000000,"s":26000000,"i":6600000,"tg":120,"tt":40,"t":1728000,"p":[["Embassy","TG7"],["Stable","TG7"]],"c":"v","n":"Final step of this TG band."}],"Embassy":[{"l":"1","b":0,"w":60,"s":0,"i":0,"tg":0,"tt":0,"t":2,"p":[["Town Center","8"]],"c":"s","n":""},{"l":"2","b":0,"w":90,"s":0,"i":0,"tg":0,"tt":0,"t":10,"p":[["Town Center","8"]],"c":"s","n":""},{"l":"3","b":0,"w":400,"s":0,"i":0,"tg":0,"tt":0,"t":60,"p":[["Town Center","8"]],"c":"s","n":""},{"l":"4","b":0,"w":900,"s":180,"i":0,"tg":0,"tt":0,"t":120,"p":[["Town Center","8"]],"c":"s","n":""},{"l":"5","b":0,"w":3800,"s":760,"i":0,"tg":0,"tt":0,"t":400,"p":[["Town Center","8"]],"c":"s","n":""},{"l":"6","b":0,"w":9600,"s":1900,"i":480,"tg":0,"tt":0,"t":800,"p":[["Town Center","8"]],"c":"s","n":""},{"l":"7","b":0,"w":34000,"s":6900,"i":1700,"tg":0,"tt":0,"t":1500,"p":[["Town Center","8"]],"c":"s","n":""},{"l":"8","b":0,"w":63000,"s":12000,"i":3100,"tg":0,"tt":0,"t":2700,"p":[["Town Center","8"]],"c":"s","n":""},{"l":"9","b":0,"w":130000,"s":26000,"i":6500,"tg":0,"tt":0,"t":7200,"p":[["Town Center","9"]],"c":"s","n":""},{"l":"10","b":0,"w":230000,"s":46000,"i":11000,"tg":0,"tt":0,"t":14250,"p":[["Town Center","10"]],"c":"s","n":""},{"l":"11","b":260000,"w":260000,"s":52000,"i":13000,"tg":0,"tt":0,"t":17820,"p":[["Town Center","11"]],"c":"s","n":""},{"l":"12","b":330000,"w":330000,"s":67000,"i":16000,"tg":0,"tt":0,"t":21360,"p":[["Town Center","12"]],"c":"s","n":""},{"l":"13","b":470000,"w":470000,"s":95000,"i":23000,"tg":0,"tt":0,"t":26130,"p":[["Town Center","13"]],"c":"s","n":""},{"l":"14","b":630000,"w":630000,"s":120000,"i":31000,"tg":0,"tt":0,"t":33240,"p":[["Town Center","14"]],"c":"s","n":""},{"l":"15","b":930000,"w":930000,"s":180000,"i":46000,"tg":0,"tt":0,"t":42750,"p":[["Town Center","15"]],"c":"s","n":""},{"l":"16","b":1100000,"w":1100000,"s":230000,"i":59000,"tg":0,"tt":0,"t":71000,"p":[["Town Center","16"]],"c":"s","n":""},{"l":"17","b":1800000,"w":1800000,"s":370000,"i":93000,"tg":0,"tt":0,"t":86880,"p":[["Town Center","17"]],"c":"s","n":""},{"l":"18","b":2500000,"w":2500000,"s":500000,"i":120000,"tg":0,"tt":0,"t":104280,"p":[["Town Center","18"]],"c":"s","n":""},{"l":"19","b":3100000,"w":3100000,"s":620000,"i":150000,"tg":0,"tt":0,"t":156420,"p":[["Town Center","19"]],"c":"s","n":""},{"l":"20","b":4300000,"w":4300000,"s":860000,"i":210000,"tg":0,"tt":0,"t":195540,"p":[["Town Center","20"]],"c":"s","n":""},{"l":"21","b":5400000,"w":5400000,"s":1000000,"i":270000,"tg":0,"tt":0,"t":254160,"p":[["Town Center","21"]],"c":"s","n":""},{"l":"22","b":7200000,"w":7200000,"s":1400000,"i":360000,"tg":0,"tt":0,"t":381300,"p":[["Town Center","22"]],"c":"s","n":""},{"l":"23","b":8900000,"w":8900000,"s":1700000,"i":440000,"tg":0,"tt":0,"t":533820,"p":[["Town Center","23"]],"c":"s","n":""},{"l":"24","b":12000000,"w":12000000,"s":2400000,"i":600000,"tg":0,"tt":0,"t":747360,"p":[["Town Center","24"]],"c":"s","n":""},{"l":"25","b":16000000,"w":16000000,"s":3200000,"i":810000,"tg":0,"tt":0,"t":1046280,"p":[["Town Center","25"]],"c":"s","n":""},{"l":"26","b":21000000,"w":21000000,"s":4200000,"i":1000000,"tg":0,"tt":0,"t":1203240,"p":[["Town Center","26"]],"c":"s","n":""},{"l":"27","b":29000000,"w":29000000,"s":5900000,"i":1400000,"tg":0,"tt":0,"t":1443900,"p":[["Town Center","27"]],"c":"s","n":""},{"l":"28","b":39000000,"w":39000000,"s":7900000,"i":1900000,"tg":0,"tt":0,"t":1660500,"p":[["Town Center","28"]],"c":"s","n":""},{"l":"29","b":49000000,"w":49000000,"s":9800000,"i":2400000,"tg":0,"tt":0,"t":1909560,"p":[["Town Center","29"]],"c":"s","n":""},{"l":"30","b":60000000,"w":60000000,"s":12000000,"i":3000000,"tg":0,"tt":0,"t":2291520,"p":[["Town Center","30"]],"c":"s","n":""},{"l":"30-1","b":13000000,"w":13000000,"s":2700000,"i":670000,"tg":33,"tt":0,"t":399120,"p":[["Town Center","TG1"]],"c":"s","n":""},{"l":"30-2","b":13000000,"w":13000000,"s":2700000,"i":670000,"tg":33,"tt":0,"t":399120,"p":[["Town Center","TG1"]],"c":"s","n":""},{"l":"30-3","b":13000000,"w":13000000,"s":2700000,"i":670000,"tg":33,"tt":0,"t":399120,"p":[["Town Center","TG1"]],"c":"s","n":""},{"l":"30-4","b":13000000,"w":13000000,"s":2700000,"i":670000,"tg":33,"tt":0,"t":399120,"p":[["Town Center","TG1"]],"c":"s","n":""},{"l":"TG1","b":13000000,"w":13000000,"s":2700000,"i":670000,"tg":33,"tt":0,"t":399120,"p":[["Town Center","TG1"]],"c":"s","n":"Final step of this TG band."},{"l":"TG1-1","b":14000000,"w":14000000,"s":2900000,"i":720000,"tg":39,"tt":0,"t":513180,"p":[["Town Center","TG2"]],"c":"s","n":""},{"l":"TG1-2","b":14000000,"w":14000000,"s":2900000,"i":720000,"tg":39,"tt":0,"t":513180,"p":[["Town Center","TG2"]],"c":"s","n":""},{"l":"TG1-3","b":14000000,"w":14000000,"s":2900000,"i":720000,"tg":39,"tt":0,"t":513180,"p":[["Town Center","TG2"]],"c":"s","n":""},{"l":"TG1-4","b":14000000,"w":14000000,"s":2900000,"i":720000,"tg":39,"tt":0,"t":513180,"p":[["Town Center","TG2"]],"c":"s","n":""},{"l":"TG2","b":14000000,"w":14000000,"s":2900000,"i":720000,"tg":39,"tt":0,"t":513180,"p":[["Town Center","TG2"]],"c":"s","n":"Final step of this TG band."},{"l":"TG2-1","b":15000000,"w":15000000,"s":3100000,"i":790000,"tg":59,"tt":0,"t":627240,"p":[["Town Center","TG3"]],"c":"s","n":""},{"l":"TG2-2","b":15000000,"w":15000000,"s":3100000,"i":790000,"tg":59,"tt":0,"t":627240,"p":[["Town Center","TG3"]],"c":"s","n":""},{"l":"TG2-3","b":15000000,"w":15000000,"s":3100000,"i":790000,"tg":59,"tt":0,"t":627240,"p":[["Town Center","TG3"]],"c":"s","n":""},{"l":"TG2-4","b":15000000,"w":15000000,"s":3100000,"i":790000,"tg":59,"tt":0,"t":627240,"p":[["Town Center","TG3"]],"c":"s","n":""},{"l":"TG3","b":15000000,"w":15000000,"s":3100000,"i":790000,"tg":59,"tt":0,"t":627240,"p":[["Town Center","TG3"]],"c":"s","n":"Final step of this TG band."},{"l":"TG3-1","b":16000000,"w":16000000,"s":3200000,"i":820000,"tg":70,"tt":0,"t":684240,"p":[["Town Center","TG4"]],"c":"s","n":""},{"l":"TG3-2","b":16000000,"w":16000000,"s":3200000,"i":820000,"tg":70,"tt":0,"t":684240,"p":[["Town Center","TG4"]],"c":"s","n":""},{"l":"TG3-3","b":16000000,"w":16000000,"s":3200000,"i":820000,"tg":70,"tt":0,"t":684240,"p":[["Town Center","TG4"]],"c":"s","n":""},{"l":"TG3-4","b":16000000,"w":16000000,"s":3200000,"i":820000,"tg":70,"tt":0,"t":684240,"p":[["Town Center","TG4"]],"c":"s","n":""},{"l":"TG4","b":16000000,"w":16000000,"s":3200000,"i":820000,"tg":70,"tt":0,"t":684240,"p":[["Town Center","TG4"]],"c":"s","n":"Final step of this TG band."},{"l":"TG4-1","b":16000000,"w":16000000,"s":3300000,"i":840000,"tg":83,"tt":0,"t":798300,"p":[["Town Center","TG5"]],"c":"s","n":""},{"l":"TG4-2","b":16000000,"w":16000000,"s":3300000,"i":840000,"tg":83,"tt":0,"t":798300,"p":[["Town Center","TG5"]],"c":"s","n":""},{"l":"TG4-3","b":16000000,"w":16000000,"s":3300000,"i":840000,"tg":83,"tt":0,"t":798300,"p":[["Town Center","TG5"]],"c":"s","n":""},{"l":"TG4-4","b":16000000,"w":16000000,"s":3300000,"i":840000,"tg":83,"tt":0,"t":798300,"p":[["Town Center","TG5"]],"c":"s","n":""},{"l":"TG5","b":16000000,"w":16000000,"s":3300000,"i":840000,"tg":83,"tt":0,"t":798300,"p":[["Town Center","TG5"]],"c":"s","n":"Final step of this TG band."},{"l":"TG5-1","b":19000000,"w":19000000,"s":3800000,"i":960000,"tg":50,"tt":2,"t":855360,"p":[["Town Center","TG6"]],"c":"s","n":""},{"l":"TG5-2","b":19000000,"w":19000000,"s":3800000,"i":960000,"tg":50,"tt":2,"t":855360,"p":[["Town Center","TG6"]],"c":"s","n":""},{"l":"TG5-3","b":19000000,"w":19000000,"s":3800000,"i":960000,"tg":50,"tt":2,"t":855360,"p":[["Town Center","TG6"]],"c":"s","n":""},{"l":"TG5-4","b":19000000,"w":19000000,"s":3800000,"i":960000,"tg":50,"tt":2,"t":855360,"p":[["Town Center","TG6"]],"c":"s","n":""},{"l":"TG6","b":19000000,"w":19000000,"s":3800000,"i":960000,"tg":25,"tt":5,"t":855360,"p":[["Town Center","TG6"]],"c":"s","n":"Final step of this TG band."},{"l":"TG6-1","b":21000000,"w":21000000,"s":4300000,"i":1000000,"tg":60,"tt":3,"t":1026420,"p":[["Town Center","TG7"]],"c":"s","n":""},{"l":"TG6-2","b":21000000,"w":21000000,"s":4300000,"i":1000000,"tg":60,"tt":3,"t":1026420,"p":[["Town Center","TG7"]],"c":"s","n":""},{"l":"TG6-3","b":21000000,"w":21000000,"s":4300000,"i":1000000,"tg":60,"tt":3,"t":1026420,"p":[["Town Center","TG7"]],"c":"s","n":""},{"l":"TG6-4","b":21000000,"w":21000000,"s":4300000,"i":1000000,"tg":60,"tt":3,"t":1026420,"p":[["Town Center","TG7"]],"c":"s","n":""},{"l":"TG7","b":21000000,"w":21000000,"s":4300000,"i":1000000,"tg":30,"tt":7,"t":1026420,"p":[["Town Center","TG7"]],"c":"s","n":"Final step of this TG band."},{"l":"TG7-1","b":26000000,"w":26000000,"s":5300000,"i":1300000,"tg":60,"tt":5,"t":1140480,"p":[["Town Center","TG8"]],"c":"s","n":""},{"l":"TG7-2","b":26000000,"w":26000000,"s":5300000,"i":1300000,"tg":60,"tt":5,"t":1140480,"p":[["Town Center","TG8"]],"c":"s","n":""},{"l":"TG7-3","b":26000000,"w":26000000,"s":5300000,"i":1300000,"tg":60,"tt":5,"t":1140480,"p":[["Town Center","TG8"]],"c":"s","n":""},{"l":"TG7-4","b":26000000,"w":26000000,"s":5300000,"i":1300000,"tg":60,"tt":5,"t":1140480,"p":[["Town Center","TG8"]],"c":"s","n":""},{"l":"TG8","b":26000000,"w":26000000,"s":5300000,"i":1300000,"tg":30,"tt":10,"t":1140480,"p":[["Town Center","TG8"]],"c":"s","n":"Final step of this TG band."}],"Academy":[{"l":"1","b":0,"w":105,"s":0,"i":0,"tg":0,"tt":0,"t":2,"p":[["Town Center","9"]],"c":"v","n":""},{"l":"2","b":0,"w":160,"s":0,"i":0,"tg":0,"tt":0,"t":9,"p":[["Town Center","9"]],"c":"v","n":""},{"l":"3","b":0,"w":725,"s":0,"i":0,"tg":0,"tt":0,"t":45,"p":[["Town Center","9"]],"c":"v","n":""},{"l":"4","b":0,"w":1600,"s":320,"i":0,"tg":0,"tt":0,"t":135,"p":[["Town Center","9"]],"c":"v","n":""},{"l":"5","b":0,"w":6800,"s":1300,"i":0,"tg":0,"tt":0,"t":270,"p":[["Town Center","9"]],"c":"v","n":""},{"l":"6","b":0,"w":17000,"s":3400,"i":860,"tg":0,"tt":0,"t":540,"p":[["Town Center","9"]],"c":"v","n":""},{"l":"7","b":0,"w":62000,"s":12000,"i":3100,"tg":0,"tt":0,"t":1080,"p":[["Town Center","9"]],"c":"v","n":""},{"l":"8","b":0,"w":110000,"s":22000,"i":5600,"tg":0,"tt":0,"t":1620,"p":[["Town Center","9"]],"c":"v","n":""},{"l":"9","b":0,"w":230000,"s":47000,"i":11000,"tg":0,"tt":0,"t":2430,"p":[["Town Center","9"]],"c":"v","n":""},{"l":"10","b":0,"w":410000,"s":82000,"i":20000,"tg":0,"tt":0,"t":3240,"p":[["Town Center","10"]],"c":"v","n":""},{"l":"11","b":520000,"w":520000,"s":100000,"i":26000,"tg":0,"tt":0,"t":4050,"p":[["Town Center","11"]],"c":"v","n":""},{"l":"12","b":670000,"w":670000,"s":130000,"i":33000,"tg":0,"tt":0,"t":4860,"p":[["Town Center","12"]],"c":"v","n":""},{"l":"13","b":950000,"w":950000,"s":190000,"i":47000,"tg":0,"tt":0,"t":5940,"p":[["Town Center","13"]],"c":"v","n":""},{"l":"14","b":1200000,"w":1200000,"s":250000,"i":63000,"tg":0,"tt":0,"t":7560,"p":[["Town Center","14"]],"c":"v","n":""},{"l":"15","b":1800000,"w":1800000,"s":370000,"i":93000,"tg":0,"tt":0,"t":9720,"p":[["Town Center","15"]],"c":"v","n":""},{"l":"16","b":2300000,"w":2300000,"s":470000,"i":110000,"tg":0,"tt":0,"t":16440,"p":[["Town Center","16"]],"c":"v","n":""},{"l":"17","b":3700000,"w":3700000,"s":740000,"i":180000,"tg":0,"tt":0,"t":19740,"p":[["Town Center","17"]],"c":"v","n":""},{"l":"18","b":5000000,"w":5000000,"s":1000000,"i":250000,"tg":0,"tt":0,"t":23700,"p":[["Town Center","18"]],"c":"v","n":""},{"l":"19","b":6200000,"w":6200000,"s":1200000,"i":310000,"tg":0,"tt":0,"t":35520,"p":[["Town Center","19"]],"c":"v","n":""},{"l":"20","b":8600000,"w":8600000,"s":1700000,"i":430000,"tg":0,"tt":0,"t":44430,"p":[["Town Center","20"]],"c":"v","n":""},{"l":"21","b":10000000,"w":10000000,"s":2100000,"i":540000,"tg":0,"tt":0,"t":57750,"p":[["Town Center","21"]],"c":"v","n":""},{"l":"22","b":14000000,"w":14000000,"s":2800000,"i":720000,"tg":0,"tt":0,"t":86640,"p":[["Town Center","22"]],"c":"v","n":""},{"l":"23","b":17000000,"w":17000000,"s":3500000,"i":890000,"tg":0,"tt":0,"t":121320,"p":[["Town Center","23"]],"c":"v","n":""},{"l":"24","b":24000000,"w":24000000,"s":4800000,"i":1200000,"tg":0,"tt":0,"t":169860,"p":[["Town Center","24"]],"c":"v","n":""},{"l":"25","b":32000000,"w":32000000,"s":6500000,"i":1600000,"tg":0,"tt":0,"t":237780,"p":[["Town Center","25"]],"c":"v","n":""},{"l":"26","b":42000000,"w":42000000,"s":8400000,"i":2100000,"tg":0,"tt":0,"t":273420,"p":[["Town Center","26"]],"c":"v","n":""},{"l":"27","b":59000000,"w":59000000,"s":11000000,"i":2900000,"tg":0,"tt":0,"t":328140,"p":[["Town Center","27"]],"c":"v","n":""},{"l":"28","b":79000000,"w":79000000,"s":15000000,"i":3900000,"tg":0,"tt":0,"t":377340,"p":[["Town Center","28"]],"c":"v","n":""},{"l":"29","b":98000000,"w":98000000,"s":19000000,"i":4900000,"tg":0,"tt":0,"t":433980,"p":[["Town Center","29"]],"c":"v","n":""},{"l":"30","b":120000000,"w":120000000,"s":24000000,"i":6000000,"tg":0,"tt":0,"t":520800,"p":[["Town Center","30"]],"c":"v","n":"Academy has NO Truegold levels - it ends at Level 30 (confirmed by kingshotdata.kr). TC 30-x/TG1 prereq is Academy Lv 30."}],"Command Center":[{"l":"1","b":0,"w":80,"s":0,"i":0,"tg":0,"tt":0,"t":2,"p":[["Town Center","10"],["Embassy","1"]],"c":"s","n":""},{"l":"2","b":0,"w":125,"s":0,"i":0,"tg":0,"tt":0,"t":8,"p":[["Town Center","10"],["Embassy","2"]],"c":"s","n":""},{"l":"3","b":0,"w":565,"s":0,"i":0,"tg":0,"tt":0,"t":35,"p":[["Town Center","10"],["Embassy","3"]],"c":"s","n":""},{"l":"4","b":0,"w":1200,"s":250,"i":0,"tg":0,"tt":0,"t":105,"p":[["Town Center","10"],["Embassy","4"]],"c":"s","n":""},{"l":"5","b":0,"w":5300,"s":1000,"i":0,"tg":0,"tt":0,"t":215,"p":[["Town Center","10"],["Embassy","5"]],"c":"s","n":""},{"l":"6","b":0,"w":13000,"s":2600,"i":670,"tg":0,"tt":0,"t":430,"p":[["Town Center","10"],["Embassy","6"]],"c":"s","n":""},{"l":"7","b":0,"w":48000,"s":9600,"i":2400,"tg":0,"tt":0,"t":840,"p":[["Town Center","10"],["Embassy","7"]],"c":"s","n":""},{"l":"8","b":0,"w":88000,"s":17000,"i":4400,"tg":0,"tt":0,"t":1290,"p":[["Town Center","10"],["Embassy","8"]],"c":"s","n":""},{"l":"9","b":0,"w":180000,"s":36000,"i":9100,"tg":0,"tt":0,"t":1920,"p":[["Town Center","10"],["Embassy","9"]],"c":"s","n":""},{"l":"10","b":0,"w":320000,"s":64000,"i":16000,"tg":0,"tt":0,"t":2580,"p":[["Town Center","10"],["Embassy","10"]],"c":"s","n":""},{"l":"11","b":390000,"w":390000,"s":79000,"i":19000,"tg":0,"tt":0,"t":3240,"p":[["Town Center","11"],["Embassy","11"]],"c":"s","n":""},{"l":"12","b":500000,"w":500000,"s":100000,"i":25000,"tg":0,"tt":0,"t":3870,"p":[["Town Center","12"],["Embassy","12"]],"c":"s","n":""},{"l":"13","b":710000,"w":710000,"s":140000,"i":35000,"tg":0,"tt":0,"t":4740,"p":[["Town Center","13"],["Embassy","13"]],"c":"s","n":""},{"l":"14","b":940000,"w":940000,"s":180000,"i":47000,"tg":0,"tt":0,"t":6030,"p":[["Town Center","14"],["Embassy","14"]],"c":"s","n":""},{"l":"15","b":1300000,"w":1300000,"s":270000,"i":69000,"tg":0,"tt":0,"t":7770,"p":[["Town Center","15"],["Embassy","15"]],"c":"s","n":""},{"l":"16","b":1700000,"w":1700000,"s":350000,"i":89000,"tg":0,"tt":0,"t":13140,"p":[["Town Center","16"],["Embassy","16"]],"c":"s","n":""},{"l":"17","b":2700000,"w":2700000,"s":550000,"i":130000,"tg":0,"tt":0,"t":15780,"p":[["Town Center","17"],["Embassy","17"]],"c":"s","n":""},{"l":"18","b":3700000,"w":3700000,"s":750000,"i":180000,"tg":0,"tt":0,"t":18960,"p":[["Town Center","18"],["Embassy","18"]],"c":"s","n":""},{"l":"19","b":4700000,"w":4700000,"s":940000,"i":230000,"tg":0,"tt":0,"t":28440,"p":[["Town Center","19"],["Embassy","19"]],"c":"s","n":""},{"l":"20","b":6400000,"w":6400000,"s":1200000,"i":320000,"tg":0,"tt":0,"t":35520,"p":[["Town Center","20"],["Embassy","20"]],"c":"s","n":""},{"l":"21","b":8100000,"w":8100000,"s":1600000,"i":400000,"tg":0,"tt":0,"t":46200,"p":[["Town Center","21"],["Embassy","21"]],"c":"s","n":""},{"l":"22","b":10000000,"w":10000000,"s":2100000,"i":540000,"tg":0,"tt":0,"t":69330,"p":[["Town Center","22"],["Embassy","22"]],"c":"s","n":""},{"l":"23","b":13000000,"w":13000000,"s":2600000,"i":670000,"tg":0,"tt":0,"t":97020,"p":[["Town Center","23"],["Embassy","23"]],"c":"s","n":""},{"l":"24","b":18000000,"w":18000000,"s":3600000,"i":900000,"tg":0,"tt":0,"t":135840,"p":[["Town Center","24"],["Embassy","24"]],"c":"s","n":""},{"l":"25","b":24000000,"w":24000000,"s":4900000,"i":1200000,"tg":0,"tt":0,"t":190200,"p":[["Town Center","25"],["Embassy","25"]],"c":"s","n":""},{"l":"26","b":31000000,"w":31000000,"s":6300000,"i":1500000,"tg":0,"tt":0,"t":218760,"p":[["Town Center","26"],["Embassy","26"]],"c":"s","n":""},{"l":"27","b":44000000,"w":44000000,"s":8900000,"i":2200000,"tg":0,"tt":0,"t":262500,"p":[["Town Center","27"],["Embassy","27"]],"c":"s","n":""},{"l":"28","b":59000000,"w":59000000,"s":11000000,"i":2900000,"tg":0,"tt":0,"t":301860,"p":[["Town Center","28"],["Embassy","28"]],"c":"s","n":""},{"l":"29","b":73000000,"w":73000000,"s":14000000,"i":3600000,"tg":0,"tt":0,"t":347160,"p":[["Town Center","29"],["Embassy","29"]],"c":"s","n":""},{"l":"30","b":90000000,"w":90000000,"s":18000000,"i":4500000,"tg":0,"tt":0,"t":416640,"p":[["Town Center","30"],["Embassy","30"]],"c":"s","n":""},{"l":"30-1","b":20000000,"w":20000000,"s":4000000,"i":1000000,"tg":26,"tt":0,"t":72570,"p":[["Town Center","TG1"],["Embassy","TG1"]],"c":"s","n":""},{"l":"30-2","b":20000000,"w":20000000,"s":4000000,"i":1000000,"tg":26,"tt":0,"t":72570,"p":[["Town Center","TG1"],["Embassy","TG1"]],"c":"s","n":""},{"l":"30-3","b":20000000,"w":20000000,"s":4000000,"i":1000000,"tg":26,"tt":0,"t":72570,"p":[["Town Center","TG1"],["Embassy","TG1"]],"c":"s","n":""},{"l":"30-4","b":20000000,"w":20000000,"s":4000000,"i":1000000,"tg":26,"tt":0,"t":72570,"p":[["Town Center","TG1"],["Embassy","TG1"]],"c":"s","n":""},{"l":"TG1","b":20000000,"w":20000000,"s":4000000,"i":1000000,"tg":26,"tt":0,"t":72570,"p":[["Town Center","TG1"],["Embassy","TG1"]],"c":"s","n":"Final step of this TG band."},{"l":"TG1-1","b":21000000,"w":21000000,"s":4300000,"i":1000000,"tg":31,"tt":0,"t":93300,"p":[["Town Center","TG2"],["Embassy","TG2"]],"c":"s","n":""},{"l":"TG1-2","b":21000000,"w":21000000,"s":4300000,"i":1000000,"tg":31,"tt":0,"t":93300,"p":[["Town Center","TG2"],["Embassy","TG2"]],"c":"s","n":""},{"l":"TG1-3","b":21000000,"w":21000000,"s":4300000,"i":1000000,"tg":31,"tt":0,"t":93300,"p":[["Town Center","TG2"],["Embassy","TG2"]],"c":"s","n":""},{"l":"TG1-4","b":21000000,"w":21000000,"s":4300000,"i":1000000,"tg":31,"tt":0,"t":93300,"p":[["Town Center","TG2"],["Embassy","TG2"]],"c":"s","n":""},{"l":"TG2","b":21000000,"w":21000000,"s":4300000,"i":1000000,"tg":31,"tt":0,"t":93300,"p":[["Town Center","TG2"],["Embassy","TG2"]],"c":"s","n":"Final step of this TG band."},{"l":"TG2-1","b":23000000,"w":23000000,"s":4700000,"i":1100000,"tg":47,"tt":0,"t":114000,"p":[["Town Center","TG3"],["Embassy","TG3"]],"c":"s","n":""},{"l":"TG2-2","b":23000000,"w":23000000,"s":4700000,"i":1100000,"tg":47,"tt":0,"t":114000,"p":[["Town Center","TG3"],["Embassy","TG3"]],"c":"s","n":""},{"l":"TG2-3","b":23000000,"w":23000000,"s":4700000,"i":1100000,"tg":47,"tt":0,"t":114000,"p":[["Town Center","TG3"],["Embassy","TG3"]],"c":"s","n":""},{"l":"TG2-4","b":23000000,"w":23000000,"s":4700000,"i":1100000,"tg":47,"tt":0,"t":114000,"p":[["Town Center","TG3"],["Embassy","TG3"]],"c":"s","n":""},{"l":"TG3","b":23000000,"w":23000000,"s":4700000,"i":1100000,"tg":47,"tt":0,"t":114000,"p":[["Town Center","TG3"],["Embassy","TG3"]],"c":"s","n":"Final step of this TG band."},{"l":"TG3-1","b":24000000,"w":24000000,"s":4900000,"i":1200000,"tg":56,"tt":0,"t":124380,"p":[["Town Center","TG4"],["Embassy","TG4"]],"c":"s","n":""},{"l":"TG3-2","b":24000000,"w":24000000,"s":4900000,"i":1200000,"tg":56,"tt":0,"t":124380,"p":[["Town Center","TG4"],["Embassy","TG4"]],"c":"s","n":""},{"l":"TG3-3","b":24000000,"w":24000000,"s":4900000,"i":1200000,"tg":56,"tt":0,"t":124380,"p":[["Town Center","TG4"],["Embassy","TG4"]],"c":"s","n":""},{"l":"TG3-4","b":24000000,"w":24000000,"s":4900000,"i":1200000,"tg":56,"tt":0,"t":124380,"p":[["Town Center","TG4"],["Embassy","TG4"]],"c":"s","n":""},{"l":"TG4","b":24000000,"w":24000000,"s":4900000,"i":1200000,"tg":56,"tt":0,"t":124380,"p":[["Town Center","TG4"],["Embassy","TG4"]],"c":"s","n":"Final step of this TG band."},{"l":"TG4-1","b":25000000,"w":25000000,"s":5000000,"i":1200000,"tg":67,"tt":0,"t":145140,"p":[["Town Center","TG5"],["Embassy","TG5"]],"c":"s","n":""},{"l":"TG4-2","b":25000000,"w":25000000,"s":5000000,"i":1200000,"tg":67,"tt":0,"t":145140,"p":[["Town Center","TG5"],["Embassy","TG5"]],"c":"s","n":""},{"l":"TG4-3","b":25000000,"w":25000000,"s":5000000,"i":1200000,"tg":67,"tt":0,"t":145140,"p":[["Town Center","TG5"],["Embassy","TG5"]],"c":"s","n":""},{"l":"TG4-4","b":25000000,"w":25000000,"s":5000000,"i":1200000,"tg":67,"tt":0,"t":145140,"p":[["Town Center","TG5"],["Embassy","TG5"]],"c":"s","n":""},{"l":"TG5","b":25000000,"w":25000000,"s":5000000,"i":1200000,"tg":67,"tt":0,"t":145140,"p":[["Town Center","TG5"],["Embassy","TG5"]],"c":"s","n":"Final step of this TG band."},{"l":"TG5-1","b":29000000,"w":29000000,"s":5800000,"i":1400000,"tg":40,"tt":2,"t":155520,"p":[["Town Center","TG6"],["Embassy","TG6"]],"c":"s","n":""},{"l":"TG5-2","b":29000000,"w":29000000,"s":5800000,"i":1400000,"tg":40,"tt":2,"t":155520,"p":[["Town Center","TG6"],["Embassy","TG6"]],"c":"s","n":""},{"l":"TG5-3","b":29000000,"w":29000000,"s":5800000,"i":1400000,"tg":40,"tt":2,"t":155520,"p":[["Town Center","TG6"],["Embassy","TG6"]],"c":"s","n":""},{"l":"TG5-4","b":29000000,"w":29000000,"s":5800000,"i":1400000,"tg":40,"tt":2,"t":155520,"p":[["Town Center","TG6"],["Embassy","TG6"]],"c":"s","n":""},{"l":"TG6","b":29000000,"w":29000000,"s":5800000,"i":1400000,"tg":20,"tt":5,"t":155520,"p":[["Town Center","TG6"],["Embassy","TG6"]],"c":"s","n":"Final step of this TG band."},{"l":"TG6-1","b":32000000,"w":32000000,"s":6500000,"i":1600000,"tg":48,"tt":3,"t":186600,"p":[["Town Center","TG7"],["Embassy","TG7"]],"c":"s","n":""},{"l":"TG6-2","b":32000000,"w":32000000,"s":6500000,"i":1600000,"tg":48,"tt":3,"t":186600,"p":[["Town Center","TG7"],["Embassy","TG7"]],"c":"s","n":""},{"l":"TG6-3","b":32000000,"w":32000000,"s":6500000,"i":1600000,"tg":48,"tt":3,"t":186600,"p":[["Town Center","TG7"],["Embassy","TG7"]],"c":"s","n":""},{"l":"TG6-4","b":32000000,"w":32000000,"s":6500000,"i":1600000,"tg":48,"tt":3,"t":186600,"p":[["Town Center","TG7"],["Embassy","TG7"]],"c":"s","n":""},{"l":"TG7","b":32000000,"w":32000000,"s":6500000,"i":1600000,"tg":24,"tt":7,"t":186600,"p":[["Town Center","TG7"],["Embassy","TG7"]],"c":"s","n":"Final step of this TG band."},{"l":"TG7-1","b":39000000,"w":39000000,"s":7900000,"i":1900000,"tg":48,"tt":4,"t":207360,"p":[["Town Center","TG8"],["Embassy","TG8"]],"c":"s","n":""},{"l":"TG7-2","b":39000000,"w":39000000,"s":7900000,"i":1900000,"tg":48,"tt":4,"t":207360,"p":[["Town Center","TG8"],["Embassy","TG8"]],"c":"s","n":""},{"l":"TG7-3","b":39000000,"w":39000000,"s":7900000,"i":1900000,"tg":48,"tt":4,"t":207360,"p":[["Town Center","TG8"],["Embassy","TG8"]],"c":"s","n":""},{"l":"TG7-4","b":39000000,"w":39000000,"s":7900000,"i":1900000,"tg":48,"tt":4,"t":207360,"p":[["Town Center","TG8"],["Embassy","TG8"]],"c":"s","n":""},{"l":"TG8","b":39000000,"w":39000000,"s":7900000,"i":1900000,"tg":24,"tt":8,"t":207360,"p":[["Town Center","TG8"],["Embassy","TG8"]],"c":"s","n":"Final step of this TG band."}],"Barracks":[{"l":"1","b":0,"w":0,"s":0,"i":0,"tg":0,"tt":0,"t":2,"p":[["Town Center","7"]],"c":"s","n":"Barracks cost table is identical to the other two troop buildings (Barracks/Stable/Range share the same costs at every level, incl. TG)."},{"l":"2","b":0,"w":140,"s":0,"i":0,"tg":0,"tt":0,"t":9,"p":[["Town Center","7"]],"c":"s","n":""},{"l":"3","b":0,"w":645,"s":0,"i":0,"tg":0,"tt":0,"t":45,"p":[["Town Center","7"]],"c":"s","n":""},{"l":"4","b":0,"w":1400,"s":285,"i":0,"tg":0,"tt":0,"t":125,"p":[["Town Center","7"]],"c":"s","n":""},{"l":"5","b":0,"w":6000,"s":1200,"i":0,"tg":0,"tt":0,"t":270,"p":[["Town Center","7"]],"c":"s","n":""},{"l":"6","b":0,"w":15000,"s":3000,"i":765,"tg":0,"tt":0,"t":540,"p":[["Town Center","7"]],"c":"s","n":""},{"l":"7","b":0,"w":55000,"s":11000,"i":2700,"tg":0,"tt":0,"t":1080,"p":[["Town Center","7"]],"c":"s","n":""},{"l":"8","b":0,"w":100000,"s":20000,"i":5000,"tg":0,"tt":0,"t":1620,"p":[["Town Center","8"]],"c":"s","n":""},{"l":"9","b":0,"w":200000,"s":41000,"i":10000,"tg":0,"tt":0,"t":2430,"p":[["Town Center","9"]],"c":"s","n":""},{"l":"10","b":0,"w":360000,"s":73000,"i":18000,"tg":0,"tt":0,"t":3240,"p":[["Town Center","10"]],"c":"s","n":""},{"l":"11","b":460000,"w":460000,"s":92000,"i":23000,"tg":0,"tt":0,"t":4050,"p":[["Town Center","11"]],"c":"s","n":""},{"l":"12","b":580000,"w":580000,"s":110000,"i":29000,"tg":0,"tt":0,"t":4860,"p":[["Town Center","12"]],"c":"s","n":""},{"l":"13","b":830000,"w":830000,"s":160000,"i":41000,"tg":0,"tt":0,"t":5940,"p":[["Town Center","13"]],"c":"s","n":""},{"l":"14","b":1100000,"w":1100000,"s":220000,"i":55000,"tg":0,"tt":0,"t":7560,"p":[["Town Center","14"]],"c":"s","n":""},{"l":"15","b":1600000,"w":1600000,"s":320000,"i":81000,"tg":0,"tt":0,"t":9720,"p":[["Town Center","15"]],"c":"s","n":""},{"l":"16","b":2000000,"w":2000000,"s":410000,"i":100000,"tg":0,"tt":0,"t":16440,"p":[["Town Center","16"]],"c":"s","n":""},{"l":"17","b":3200000,"w":3200000,"s":650000,"i":160000,"tg":0,"tt":0,"t":19740,"p":[["Town Center","17"]],"c":"s","n":""},{"l":"18","b":4300000,"w":4300000,"s":870000,"i":210000,"tg":0,"tt":0,"t":23700,"p":[["Town Center","18"]],"c":"s","n":""},{"l":"19","b":5400000,"w":5400000,"s":1000000,"i":270000,"tg":0,"tt":0,"t":35520,"p":[["Town Center","19"]],"c":"s","n":""},{"l":"20","b":7500000,"w":7500000,"s":1500000,"i":370000,"tg":0,"tt":0,"t":44430,"p":[["Town Center","20"]],"c":"s","n":""},{"l":"21","b":9500000,"w":9500000,"s":1900000,"i":470000,"tg":0,"tt":0,"t":57750,"p":[["Town Center","21"]],"c":"s","n":""},{"l":"22","b":12000000,"w":12000000,"s":2500000,"i":630000,"tg":0,"tt":0,"t":86640,"p":[["Town Center","22"]],"c":"s","n":""},{"l":"23","b":15000000,"w":15000000,"s":3100000,"i":780000,"tg":0,"tt":0,"t":121320,"p":[["Town Center","23"]],"c":"s","n":""},{"l":"24","b":21000000,"w":21000000,"s":4200000,"i":1000000,"tg":0,"tt":0,"t":169860,"p":[["Town Center","24"]],"c":"s","n":""},{"l":"25","b":28000000,"w":28000000,"s":5700000,"i":1400000,"tg":0,"tt":0,"t":237780,"p":[["Town Center","25"]],"c":"s","n":""},{"l":"26","b":36000000,"w":36000000,"s":7300000,"i":1800000,"tg":0,"tt":0,"t":273420,"p":[["Town Center","26"]],"c":"s","n":""},{"l":"27","b":52000000,"w":52000000,"s":10000000,"i":2600000,"tg":0,"tt":0,"t":328140,"p":[["Town Center","27"]],"c":"s","n":""},{"l":"28","b":69000000,"w":69000000,"s":13000000,"i":3400000,"tg":0,"tt":0,"t":377340,"p":[["Town Center","28"]],"c":"s","n":""},{"l":"29","b":86000000,"w":86000000,"s":17000000,"i":4300000,"tg":0,"tt":0,"t":433980,"p":[["Town Center","29"]],"c":"s","n":""},{"l":"30","b":100000000,"w":100000000,"s":21000000,"i":5800000,"tg":0,"tt":0,"t":520800,"p":[["Town Center","30"]],"c":"s","n":""},{"l":"30-1","b":23000000,"w":23000000,"s":4700000,"i":1100000,"tg":59,"tt":0,"t":90720,"p":[["Town Center","TG1"]],"c":"s","n":""},{"l":"30-2","b":23000000,"w":23000000,"s":4700000,"i":1100000,"tg":59,"tt":0,"t":90720,"p":[["Town Center","TG1"]],"c":"s","n":""},{"l":"30-3","b":23000000,"w":23000000,"s":4700000,"i":1100000,"tg":59,"tt":0,"t":90720,"p":[["Town Center","TG1"]],"c":"s","n":""},{"l":"30-4","b":23000000,"w":23000000,"s":4700000,"i":1100000,"tg":59,"tt":0,"t":90720,"p":[["Town Center","TG1"]],"c":"s","n":""},{"l":"TG1","b":23000000,"w":23000000,"s":4700000,"i":1100000,"tg":59,"tt":0,"t":90720,"p":[["Town Center","TG1"]],"c":"s","n":"Final step of this TG band."},{"l":"TG1-1","b":25000000,"w":25000000,"s":5000000,"i":1200000,"tg":71,"tt":0,"t":116640,"p":[["Town Center","TG2"]],"c":"s","n":""},{"l":"TG1-2","b":25000000,"w":25000000,"s":5000000,"i":1200000,"tg":71,"tt":0,"t":116640,"p":[["Town Center","TG2"]],"c":"s","n":""},{"l":"TG1-3","b":25000000,"w":25000000,"s":5000000,"i":1200000,"tg":71,"tt":0,"t":116640,"p":[["Town Center","TG2"]],"c":"s","n":""},{"l":"TG1-4","b":25000000,"w":25000000,"s":5000000,"i":1200000,"tg":71,"tt":0,"t":116640,"p":[["Town Center","TG2"]],"c":"s","n":""},{"l":"TG2","b":25000000,"w":25000000,"s":5000000,"i":1200000,"tg":71,"tt":0,"t":116640,"p":[["Town Center","TG2"]],"c":"s","n":"Final step of this TG band."},{"l":"TG2-1","b":27000000,"w":27000000,"s":5500000,"i":1300000,"tg":107,"tt":0,"t":142560,"p":[["Town Center","TG3"]],"c":"s","n":""},{"l":"TG2-2","b":27000000,"w":27000000,"s":5500000,"i":1300000,"tg":107,"tt":0,"t":142560,"p":[["Town Center","TG3"]],"c":"s","n":""},{"l":"TG2-3","b":27000000,"w":27000000,"s":5500000,"i":1300000,"tg":107,"tt":0,"t":142560,"p":[["Town Center","TG3"]],"c":"s","n":""},{"l":"TG2-4","b":27000000,"w":27000000,"s":5500000,"i":1300000,"tg":107,"tt":0,"t":142560,"p":[["Town Center","TG3"]],"c":"s","n":""},{"l":"TG3","b":27000000,"w":27000000,"s":5500000,"i":1300000,"tg":107,"tt":0,"t":142560,"p":[["Town Center","TG3"]],"c":"s","n":"Final step of this TG band."},{"l":"TG3-1","b":28000000,"w":28000000,"s":5700000,"i":1400000,"tg":126,"tt":0,"t":155520,"p":[["Town Center","TG4"]],"c":"s","n":""},{"l":"TG3-2","b":28000000,"w":28000000,"s":5700000,"i":1400000,"tg":126,"tt":0,"t":155520,"p":[["Town Center","TG4"]],"c":"s","n":""},{"l":"TG3-3","b":28000000,"w":28000000,"s":5700000,"i":1400000,"tg":126,"tt":0,"t":155520,"p":[["Town Center","TG4"]],"c":"s","n":""},{"l":"TG3-4","b":28000000,"w":28000000,"s":5700000,"i":1400000,"tg":126,"tt":0,"t":155520,"p":[["Town Center","TG4"]],"c":"s","n":""},{"l":"TG4","b":28000000,"w":28000000,"s":5700000,"i":1400000,"tg":126,"tt":0,"t":155520,"p":[["Town Center","TG4"]],"c":"s","n":"Final step of this TG band."},{"l":"TG4-1","b":29000000,"w":29000000,"s":5900000,"i":1400000,"tg":150,"tt":0,"t":181440,"p":[["Town Center","TG5"]],"c":"s","n":""},{"l":"TG4-2","b":29000000,"w":29000000,"s":5900000,"i":1400000,"tg":150,"tt":0,"t":181440,"p":[["Town Center","TG5"]],"c":"s","n":""},{"l":"TG4-3","b":29000000,"w":29000000,"s":5900000,"i":1400000,"tg":150,"tt":0,"t":181440,"p":[["Town Center","TG5"]],"c":"s","n":""},{"l":"TG4-4","b":29000000,"w":29000000,"s":5900000,"i":1400000,"tg":150,"tt":0,"t":181440,"p":[["Town Center","TG5"]],"c":"s","n":""},{"l":"TG5","b":29000000,"w":29000000,"s":5900000,"i":1400000,"tg":150,"tt":0,"t":181440,"p":[["Town Center","TG5"]],"c":"s","n":"Final step of this TG band."},{"l":"TG5-1","b":33000000,"w":33000000,"s":6700000,"i":1600000,"tg":90,"tt":4,"t":194400,"p":[["Town Center","TG6"]],"c":"s","n":""},{"l":"TG5-2","b":33000000,"w":33000000,"s":6700000,"i":1600000,"tg":90,"tt":4,"t":194400,"p":[["Town Center","TG6"]],"c":"s","n":""},{"l":"TG5-3","b":33000000,"w":33000000,"s":6700000,"i":1600000,"tg":90,"tt":4,"t":194400,"p":[["Town Center","TG6"]],"c":"s","n":""},{"l":"TG5-4","b":33000000,"w":33000000,"s":6700000,"i":1600000,"tg":90,"tt":4,"t":194400,"p":[["Town Center","TG6"]],"c":"s","n":""},{"l":"TG6","b":33000000,"w":33000000,"s":6700000,"i":1600000,"tg":45,"tt":9,"t":194400,"p":[["Town Center","TG6"]],"c":"s","n":"Final step of this TG band."},{"l":"TG6-1","b":38000000,"w":38000000,"s":7600000,"i":1900000,"tg":108,"tt":6,"t":233280,"p":[["Town Center","TG7"]],"c":"s","n":""},{"l":"TG6-2","b":38000000,"w":38000000,"s":7600000,"i":1900000,"tg":108,"tt":6,"t":233280,"p":[["Town Center","TG7"]],"c":"s","n":""},{"l":"TG6-3","b":38000000,"w":38000000,"s":7600000,"i":1900000,"tg":108,"tt":6,"t":233280,"p":[["Town Center","TG7"]],"c":"s","n":""},{"l":"TG6-4","b":38000000,"w":38000000,"s":7600000,"i":1900000,"tg":108,"tt":6,"t":233280,"p":[["Town Center","TG7"]],"c":"s","n":""},{"l":"TG7","b":38000000,"w":38000000,"s":7600000,"i":1900000,"tg":54,"tt":13,"t":233280,"p":[["Town Center","TG7"]],"c":"s","n":"Final step of this TG band."},{"l":"TG7-1","b":46000000,"w":46000000,"s":9300000,"i":2300000,"tg":108,"tt":9,"t":259200,"p":[["Town Center","TG8"]],"c":"s","n":""},{"l":"TG7-2","b":46000000,"w":46000000,"s":9300000,"i":2300000,"tg":108,"tt":9,"t":259200,"p":[["Town Center","TG8"]],"c":"s","n":""},{"l":"TG7-3","b":46000000,"w":46000000,"s":9300000,"i":2300000,"tg":108,"tt":9,"t":259200,"p":[["Town Center","TG8"]],"c":"s","n":""},{"l":"TG7-4","b":46000000,"w":46000000,"s":9300000,"i":2300000,"tg":108,"tt":9,"t":259200,"p":[["Town Center","TG8"]],"c":"s","n":""},{"l":"TG8","b":46000000,"w":46000000,"s":9300000,"i":2300000,"tg":54,"tt":18,"t":259200,"p":[["Town Center","TG8"]],"c":"s","n":"Final step of this TG band."}],"Stable":[{"l":"1","b":0,"w":0,"s":0,"i":0,"tg":0,"tt":0,"t":2,"p":[["Town Center","7"]],"c":"s","n":"Stable cost table is identical to the other two troop buildings (Barracks/Stable/Range share the same costs at every level, incl. TG)."},{"l":"2","b":0,"w":140,"s":0,"i":0,"tg":0,"tt":0,"t":9,"p":[["Town Center","7"]],"c":"s","n":""},{"l":"3","b":0,"w":645,"s":0,"i":0,"tg":0,"tt":0,"t":45,"p":[["Town Center","7"]],"c":"s","n":""},{"l":"4","b":0,"w":1400,"s":285,"i":0,"tg":0,"tt":0,"t":125,"p":[["Town Center","7"]],"c":"s","n":""},{"l":"5","b":0,"w":6000,"s":1200,"i":0,"tg":0,"tt":0,"t":270,"p":[["Town Center","7"]],"c":"s","n":""},{"l":"6","b":0,"w":15000,"s":3000,"i":765,"tg":0,"tt":0,"t":540,"p":[["Town Center","7"]],"c":"s","n":""},{"l":"7","b":0,"w":55000,"s":11000,"i":2700,"tg":0,"tt":0,"t":1080,"p":[["Town Center","7"]],"c":"s","n":""},{"l":"8","b":0,"w":100000,"s":20000,"i":5000,"tg":0,"tt":0,"t":1620,"p":[["Town Center","8"]],"c":"s","n":""},{"l":"9","b":0,"w":200000,"s":41000,"i":10000,"tg":0,"tt":0,"t":2430,"p":[["Town Center","9"]],"c":"s","n":""},{"l":"10","b":0,"w":360000,"s":73000,"i":18000,"tg":0,"tt":0,"t":3240,"p":[["Town Center","10"]],"c":"s","n":""},{"l":"11","b":460000,"w":460000,"s":92000,"i":23000,"tg":0,"tt":0,"t":4050,"p":[["Town Center","11"]],"c":"s","n":""},{"l":"12","b":580000,"w":580000,"s":110000,"i":29000,"tg":0,"tt":0,"t":4860,"p":[["Town Center","12"]],"c":"s","n":""},{"l":"13","b":830000,"w":830000,"s":160000,"i":41000,"tg":0,"tt":0,"t":5940,"p":[["Town Center","13"]],"c":"s","n":""},{"l":"14","b":1100000,"w":1100000,"s":220000,"i":55000,"tg":0,"tt":0,"t":7560,"p":[["Town Center","14"]],"c":"s","n":""},{"l":"15","b":1600000,"w":1600000,"s":320000,"i":81000,"tg":0,"tt":0,"t":9720,"p":[["Town Center","15"]],"c":"s","n":""},{"l":"16","b":2000000,"w":2000000,"s":410000,"i":100000,"tg":0,"tt":0,"t":16440,"p":[["Town Center","16"]],"c":"s","n":""},{"l":"17","b":3200000,"w":3200000,"s":650000,"i":160000,"tg":0,"tt":0,"t":19740,"p":[["Town Center","17"]],"c":"s","n":""},{"l":"18","b":4300000,"w":4300000,"s":870000,"i":210000,"tg":0,"tt":0,"t":23700,"p":[["Town Center","18"]],"c":"s","n":""},{"l":"19","b":5400000,"w":5400000,"s":1000000,"i":270000,"tg":0,"tt":0,"t":35520,"p":[["Town Center","19"]],"c":"s","n":""},{"l":"20","b":7500000,"w":7500000,"s":1500000,"i":370000,"tg":0,"tt":0,"t":44430,"p":[["Town Center","20"]],"c":"s","n":""},{"l":"21","b":9500000,"w":9500000,"s":1900000,"i":470000,"tg":0,"tt":0,"t":57750,"p":[["Town Center","21"]],"c":"s","n":""},{"l":"22","b":12000000,"w":12000000,"s":2500000,"i":630000,"tg":0,"tt":0,"t":86640,"p":[["Town Center","22"]],"c":"s","n":""},{"l":"23","b":15000000,"w":15000000,"s":3100000,"i":780000,"tg":0,"tt":0,"t":121320,"p":[["Town Center","23"]],"c":"s","n":""},{"l":"24","b":21000000,"w":21000000,"s":4200000,"i":1000000,"tg":0,"tt":0,"t":169860,"p":[["Town Center","24"]],"c":"s","n":""},{"l":"25","b":28000000,"w":28000000,"s":5700000,"i":1400000,"tg":0,"tt":0,"t":237780,"p":[["Town Center","25"]],"c":"s","n":""},{"l":"26","b":36000000,"w":36000000,"s":7300000,"i":1800000,"tg":0,"tt":0,"t":273420,"p":[["Town Center","26"]],"c":"s","n":""},{"l":"27","b":52000000,"w":52000000,"s":10000000,"i":2600000,"tg":0,"tt":0,"t":328140,"p":[["Town Center","27"]],"c":"s","n":""},{"l":"28","b":69000000,"w":69000000,"s":13000000,"i":3400000,"tg":0,"tt":0,"t":377340,"p":[["Town Center","28"]],"c":"s","n":""},{"l":"29","b":86000000,"w":86000000,"s":17000000,"i":4300000,"tg":0,"tt":0,"t":433980,"p":[["Town Center","29"]],"c":"s","n":""},{"l":"30","b":100000000,"w":100000000,"s":21000000,"i":5800000,"tg":0,"tt":0,"t":520800,"p":[["Town Center","30"]],"c":"s","n":""},{"l":"30-1","b":23000000,"w":23000000,"s":4700000,"i":1100000,"tg":59,"tt":0,"t":90720,"p":[["Town Center","TG1"]],"c":"s","n":""},{"l":"30-2","b":23000000,"w":23000000,"s":4700000,"i":1100000,"tg":59,"tt":0,"t":90720,"p":[["Town Center","TG1"]],"c":"s","n":""},{"l":"30-3","b":23000000,"w":23000000,"s":4700000,"i":1100000,"tg":59,"tt":0,"t":90720,"p":[["Town Center","TG1"]],"c":"s","n":""},{"l":"30-4","b":23000000,"w":23000000,"s":4700000,"i":1100000,"tg":59,"tt":0,"t":90720,"p":[["Town Center","TG1"]],"c":"s","n":""},{"l":"TG1","b":23000000,"w":23000000,"s":4700000,"i":1100000,"tg":59,"tt":0,"t":90720,"p":[["Town Center","TG1"]],"c":"s","n":"Final step of this TG band."},{"l":"TG1-1","b":25000000,"w":25000000,"s":5000000,"i":1200000,"tg":71,"tt":0,"t":116640,"p":[["Town Center","TG2"]],"c":"s","n":""},{"l":"TG1-2","b":25000000,"w":25000000,"s":5000000,"i":1200000,"tg":71,"tt":0,"t":116640,"p":[["Town Center","TG2"]],"c":"s","n":""},{"l":"TG1-3","b":25000000,"w":25000000,"s":5000000,"i":1200000,"tg":71,"tt":0,"t":116640,"p":[["Town Center","TG2"]],"c":"s","n":""},{"l":"TG1-4","b":25000000,"w":25000000,"s":5000000,"i":1200000,"tg":71,"tt":0,"t":116640,"p":[["Town Center","TG2"]],"c":"s","n":""},{"l":"TG2","b":25000000,"w":25000000,"s":5000000,"i":1200000,"tg":71,"tt":0,"t":116640,"p":[["Town Center","TG2"]],"c":"s","n":"Final step of this TG band."},{"l":"TG2-1","b":27000000,"w":27000000,"s":5500000,"i":1300000,"tg":107,"tt":0,"t":142560,"p":[["Town Center","TG3"]],"c":"s","n":""},{"l":"TG2-2","b":27000000,"w":27000000,"s":5500000,"i":1300000,"tg":107,"tt":0,"t":142560,"p":[["Town Center","TG3"]],"c":"s","n":""},{"l":"TG2-3","b":27000000,"w":27000000,"s":5500000,"i":1300000,"tg":107,"tt":0,"t":142560,"p":[["Town Center","TG3"]],"c":"s","n":""},{"l":"TG2-4","b":27000000,"w":27000000,"s":5500000,"i":1300000,"tg":107,"tt":0,"t":142560,"p":[["Town Center","TG3"]],"c":"s","n":""},{"l":"TG3","b":27000000,"w":27000000,"s":5500000,"i":1300000,"tg":107,"tt":0,"t":142560,"p":[["Town Center","TG3"]],"c":"s","n":"Final step of this TG band."},{"l":"TG3-1","b":28000000,"w":28000000,"s":5700000,"i":1400000,"tg":126,"tt":0,"t":155520,"p":[["Town Center","TG4"]],"c":"s","n":""},{"l":"TG3-2","b":28000000,"w":28000000,"s":5700000,"i":1400000,"tg":126,"tt":0,"t":155520,"p":[["Town Center","TG4"]],"c":"s","n":""},{"l":"TG3-3","b":28000000,"w":28000000,"s":5700000,"i":1400000,"tg":126,"tt":0,"t":155520,"p":[["Town Center","TG4"]],"c":"s","n":""},{"l":"TG3-4","b":28000000,"w":28000000,"s":5700000,"i":1400000,"tg":126,"tt":0,"t":155520,"p":[["Town Center","TG4"]],"c":"s","n":""},{"l":"TG4","b":28000000,"w":28000000,"s":5700000,"i":1400000,"tg":126,"tt":0,"t":155520,"p":[["Town Center","TG4"]],"c":"s","n":"Final step of this TG band."},{"l":"TG4-1","b":29000000,"w":29000000,"s":5900000,"i":1400000,"tg":150,"tt":0,"t":181440,"p":[["Town Center","TG5"]],"c":"s","n":""},{"l":"TG4-2","b":29000000,"w":29000000,"s":5900000,"i":1400000,"tg":150,"tt":0,"t":181440,"p":[["Town Center","TG5"]],"c":"s","n":""},{"l":"TG4-3","b":29000000,"w":29000000,"s":5900000,"i":1400000,"tg":150,"tt":0,"t":181440,"p":[["Town Center","TG5"]],"c":"s","n":""},{"l":"TG4-4","b":29000000,"w":29000000,"s":5900000,"i":1400000,"tg":150,"tt":0,"t":181440,"p":[["Town Center","TG5"]],"c":"s","n":""},{"l":"TG5","b":29000000,"w":29000000,"s":5900000,"i":1400000,"tg":150,"tt":0,"t":181440,"p":[["Town Center","TG5"]],"c":"s","n":"Final step of this TG band."},{"l":"TG5-1","b":33000000,"w":33000000,"s":6700000,"i":1600000,"tg":90,"tt":4,"t":194400,"p":[["Town Center","TG6"]],"c":"s","n":""},{"l":"TG5-2","b":33000000,"w":33000000,"s":6700000,"i":1600000,"tg":90,"tt":4,"t":194400,"p":[["Town Center","TG6"]],"c":"s","n":""},{"l":"TG5-3","b":33000000,"w":33000000,"s":6700000,"i":1600000,"tg":90,"tt":4,"t":194400,"p":[["Town Center","TG6"]],"c":"s","n":""},{"l":"TG5-4","b":33000000,"w":33000000,"s":6700000,"i":1600000,"tg":90,"tt":4,"t":194400,"p":[["Town Center","TG6"]],"c":"s","n":""},{"l":"TG6","b":33000000,"w":33000000,"s":6700000,"i":1600000,"tg":45,"tt":9,"t":194400,"p":[["Town Center","TG6"]],"c":"s","n":"Final step of this TG band."},{"l":"TG6-1","b":38000000,"w":38000000,"s":7600000,"i":1900000,"tg":108,"tt":6,"t":233280,"p":[["Town Center","TG7"]],"c":"s","n":""},{"l":"TG6-2","b":38000000,"w":38000000,"s":7600000,"i":1900000,"tg":108,"tt":6,"t":233280,"p":[["Town Center","TG7"]],"c":"s","n":""},{"l":"TG6-3","b":38000000,"w":38000000,"s":7600000,"i":1900000,"tg":108,"tt":6,"t":233280,"p":[["Town Center","TG7"]],"c":"s","n":""},{"l":"TG6-4","b":38000000,"w":38000000,"s":7600000,"i":1900000,"tg":108,"tt":6,"t":233280,"p":[["Town Center","TG7"]],"c":"s","n":""},{"l":"TG7","b":38000000,"w":38000000,"s":7600000,"i":1900000,"tg":54,"tt":13,"t":233280,"p":[["Town Center","TG7"]],"c":"s","n":"Final step of this TG band."},{"l":"TG7-1","b":46000000,"w":46000000,"s":9300000,"i":2300000,"tg":108,"tt":9,"t":259200,"p":[["Town Center","TG8"]],"c":"s","n":""},{"l":"TG7-2","b":46000000,"w":46000000,"s":9300000,"i":2300000,"tg":108,"tt":9,"t":259200,"p":[["Town Center","TG8"]],"c":"s","n":""},{"l":"TG7-3","b":46000000,"w":46000000,"s":9300000,"i":2300000,"tg":108,"tt":9,"t":259200,"p":[["Town Center","TG8"]],"c":"s","n":""},{"l":"TG7-4","b":46000000,"w":46000000,"s":9300000,"i":2300000,"tg":108,"tt":9,"t":259200,"p":[["Town Center","TG8"]],"c":"s","n":""},{"l":"TG8","b":46000000,"w":46000000,"s":9300000,"i":2300000,"tg":54,"tt":18,"t":259200,"p":[["Town Center","TG8"]],"c":"s","n":"Final step of this TG band."}],"Range":[{"l":"1","b":0,"w":0,"s":0,"i":0,"tg":0,"tt":0,"t":2,"p":[["Town Center","7"]],"c":"s","n":"Range cost table is identical to the other two troop buildings (Barracks/Stable/Range share the same costs at every level, incl. TG)."},{"l":"2","b":0,"w":140,"s":0,"i":0,"tg":0,"tt":0,"t":9,"p":[["Town Center","7"]],"c":"s","n":""},{"l":"3","b":0,"w":645,"s":0,"i":0,"tg":0,"tt":0,"t":45,"p":[["Town Center","7"]],"c":"s","n":""},{"l":"4","b":0,"w":1400,"s":285,"i":0,"tg":0,"tt":0,"t":125,"p":[["Town Center","7"]],"c":"s","n":""},{"l":"5","b":0,"w":6000,"s":1200,"i":0,"tg":0,"tt":0,"t":270,"p":[["Town Center","7"]],"c":"s","n":""},{"l":"6","b":0,"w":15000,"s":3000,"i":765,"tg":0,"tt":0,"t":540,"p":[["Town Center","7"]],"c":"s","n":""},{"l":"7","b":0,"w":55000,"s":11000,"i":2700,"tg":0,"tt":0,"t":1080,"p":[["Town Center","7"]],"c":"s","n":""},{"l":"8","b":0,"w":100000,"s":20000,"i":5000,"tg":0,"tt":0,"t":1620,"p":[["Town Center","8"]],"c":"s","n":""},{"l":"9","b":0,"w":200000,"s":41000,"i":10000,"tg":0,"tt":0,"t":2430,"p":[["Town Center","9"]],"c":"s","n":""},{"l":"10","b":0,"w":360000,"s":73000,"i":18000,"tg":0,"tt":0,"t":3240,"p":[["Town Center","10"]],"c":"s","n":""},{"l":"11","b":460000,"w":460000,"s":92000,"i":23000,"tg":0,"tt":0,"t":4050,"p":[["Town Center","11"]],"c":"s","n":""},{"l":"12","b":580000,"w":580000,"s":110000,"i":29000,"tg":0,"tt":0,"t":4860,"p":[["Town Center","12"]],"c":"s","n":""},{"l":"13","b":830000,"w":830000,"s":160000,"i":41000,"tg":0,"tt":0,"t":5940,"p":[["Town Center","13"]],"c":"s","n":""},{"l":"14","b":1100000,"w":1100000,"s":220000,"i":55000,"tg":0,"tt":0,"t":7560,"p":[["Town Center","14"]],"c":"s","n":""},{"l":"15","b":1600000,"w":1600000,"s":320000,"i":81000,"tg":0,"tt":0,"t":9720,"p":[["Town Center","15"]],"c":"s","n":""},{"l":"16","b":2000000,"w":2000000,"s":410000,"i":100000,"tg":0,"tt":0,"t":16440,"p":[["Town Center","16"]],"c":"s","n":""},{"l":"17","b":3200000,"w":3200000,"s":650000,"i":160000,"tg":0,"tt":0,"t":19740,"p":[["Town Center","17"]],"c":"s","n":""},{"l":"18","b":4300000,"w":4300000,"s":870000,"i":210000,"tg":0,"tt":0,"t":23700,"p":[["Town Center","18"]],"c":"s","n":""},{"l":"19","b":5400000,"w":5400000,"s":1000000,"i":270000,"tg":0,"tt":0,"t":35520,"p":[["Town Center","19"]],"c":"s","n":""},{"l":"20","b":7500000,"w":7500000,"s":1500000,"i":370000,"tg":0,"tt":0,"t":44430,"p":[["Town Center","20"]],"c":"s","n":""},{"l":"21","b":9500000,"w":9500000,"s":1900000,"i":470000,"tg":0,"tt":0,"t":57750,"p":[["Town Center","21"]],"c":"s","n":""},{"l":"22","b":12000000,"w":12000000,"s":2500000,"i":630000,"tg":0,"tt":0,"t":86640,"p":[["Town Center","22"]],"c":"s","n":""},{"l":"23","b":15000000,"w":15000000,"s":3100000,"i":780000,"tg":0,"tt":0,"t":121320,"p":[["Town Center","23"]],"c":"s","n":""},{"l":"24","b":21000000,"w":21000000,"s":4200000,"i":1000000,"tg":0,"tt":0,"t":169860,"p":[["Town Center","24"]],"c":"s","n":""},{"l":"25","b":28000000,"w":28000000,"s":5700000,"i":1400000,"tg":0,"tt":0,"t":237780,"p":[["Town Center","25"]],"c":"s","n":""},{"l":"26","b":36000000,"w":36000000,"s":7300000,"i":1800000,"tg":0,"tt":0,"t":273420,"p":[["Town Center","26"]],"c":"s","n":""},{"l":"27","b":52000000,"w":52000000,"s":10000000,"i":2600000,"tg":0,"tt":0,"t":328140,"p":[["Town Center","27"]],"c":"s","n":""},{"l":"28","b":69000000,"w":69000000,"s":13000000,"i":3400000,"tg":0,"tt":0,"t":377340,"p":[["Town Center","28"]],"c":"s","n":""},{"l":"29","b":86000000,"w":86000000,"s":17000000,"i":4300000,"tg":0,"tt":0,"t":433980,"p":[["Town Center","29"]],"c":"s","n":""},{"l":"30","b":100000000,"w":100000000,"s":21000000,"i":5800000,"tg":0,"tt":0,"t":520800,"p":[["Town Center","30"]],"c":"s","n":""},{"l":"30-1","b":23000000,"w":23000000,"s":4700000,"i":1100000,"tg":59,"tt":0,"t":90720,"p":[["Town Center","TG1"]],"c":"s","n":""},{"l":"30-2","b":23000000,"w":23000000,"s":4700000,"i":1100000,"tg":59,"tt":0,"t":90720,"p":[["Town Center","TG1"]],"c":"s","n":""},{"l":"30-3","b":23000000,"w":23000000,"s":4700000,"i":1100000,"tg":59,"tt":0,"t":90720,"p":[["Town Center","TG1"]],"c":"s","n":""},{"l":"30-4","b":23000000,"w":23000000,"s":4700000,"i":1100000,"tg":59,"tt":0,"t":90720,"p":[["Town Center","TG1"]],"c":"s","n":""},{"l":"TG1","b":23000000,"w":23000000,"s":4700000,"i":1100000,"tg":59,"tt":0,"t":90720,"p":[["Town Center","TG1"]],"c":"s","n":"Final step of this TG band."},{"l":"TG1-1","b":25000000,"w":25000000,"s":5000000,"i":1200000,"tg":71,"tt":0,"t":116640,"p":[["Town Center","TG2"]],"c":"s","n":""},{"l":"TG1-2","b":25000000,"w":25000000,"s":5000000,"i":1200000,"tg":71,"tt":0,"t":116640,"p":[["Town Center","TG2"]],"c":"s","n":""},{"l":"TG1-3","b":25000000,"w":25000000,"s":5000000,"i":1200000,"tg":71,"tt":0,"t":116640,"p":[["Town Center","TG2"]],"c":"s","n":""},{"l":"TG1-4","b":25000000,"w":25000000,"s":5000000,"i":1200000,"tg":71,"tt":0,"t":116640,"p":[["Town Center","TG2"]],"c":"s","n":""},{"l":"TG2","b":25000000,"w":25000000,"s":5000000,"i":1200000,"tg":71,"tt":0,"t":116640,"p":[["Town Center","TG2"]],"c":"s","n":"Final step of this TG band."},{"l":"TG2-1","b":27000000,"w":27000000,"s":5500000,"i":1300000,"tg":107,"tt":0,"t":142560,"p":[["Town Center","TG3"]],"c":"s","n":""},{"l":"TG2-2","b":27000000,"w":27000000,"s":5500000,"i":1300000,"tg":107,"tt":0,"t":142560,"p":[["Town Center","TG3"]],"c":"s","n":""},{"l":"TG2-3","b":27000000,"w":27000000,"s":5500000,"i":1300000,"tg":107,"tt":0,"t":142560,"p":[["Town Center","TG3"]],"c":"s","n":""},{"l":"TG2-4","b":27000000,"w":27000000,"s":5500000,"i":1300000,"tg":107,"tt":0,"t":142560,"p":[["Town Center","TG3"]],"c":"s","n":""},{"l":"TG3","b":27000000,"w":27000000,"s":5500000,"i":1300000,"tg":107,"tt":0,"t":142560,"p":[["Town Center","TG3"]],"c":"s","n":"Final step of this TG band."},{"l":"TG3-1","b":28000000,"w":28000000,"s":5700000,"i":1400000,"tg":126,"tt":0,"t":155520,"p":[["Town Center","TG4"]],"c":"s","n":""},{"l":"TG3-2","b":28000000,"w":28000000,"s":5700000,"i":1400000,"tg":126,"tt":0,"t":155520,"p":[["Town Center","TG4"]],"c":"s","n":""},{"l":"TG3-3","b":28000000,"w":28000000,"s":5700000,"i":1400000,"tg":126,"tt":0,"t":155520,"p":[["Town Center","TG4"]],"c":"s","n":""},{"l":"TG3-4","b":28000000,"w":28000000,"s":5700000,"i":1400000,"tg":126,"tt":0,"t":155520,"p":[["Town Center","TG4"]],"c":"s","n":""},{"l":"TG4","b":28000000,"w":28000000,"s":5700000,"i":1400000,"tg":126,"tt":0,"t":155520,"p":[["Town Center","TG4"]],"c":"s","n":"Final step of this TG band."},{"l":"TG4-1","b":29000000,"w":29000000,"s":5900000,"i":1400000,"tg":150,"tt":0,"t":181440,"p":[["Town Center","TG5"]],"c":"s","n":""},{"l":"TG4-2","b":29000000,"w":29000000,"s":5900000,"i":1400000,"tg":150,"tt":0,"t":181440,"p":[["Town Center","TG5"]],"c":"s","n":""},{"l":"TG4-3","b":29000000,"w":29000000,"s":5900000,"i":1400000,"tg":150,"tt":0,"t":181440,"p":[["Town Center","TG5"]],"c":"s","n":""},{"l":"TG4-4","b":29000000,"w":29000000,"s":5900000,"i":1400000,"tg":150,"tt":0,"t":181440,"p":[["Town Center","TG5"]],"c":"s","n":""},{"l":"TG5","b":29000000,"w":29000000,"s":5900000,"i":1400000,"tg":150,"tt":0,"t":181440,"p":[["Town Center","TG5"]],"c":"s","n":"Final step of this TG band."},{"l":"TG5-1","b":33000000,"w":33000000,"s":6700000,"i":1600000,"tg":90,"tt":4,"t":194400,"p":[["Town Center","TG6"]],"c":"s","n":""},{"l":"TG5-2","b":33000000,"w":33000000,"s":6700000,"i":1600000,"tg":90,"tt":4,"t":194400,"p":[["Town Center","TG6"]],"c":"s","n":""},{"l":"TG5-3","b":33000000,"w":33000000,"s":6700000,"i":1600000,"tg":90,"tt":4,"t":194400,"p":[["Town Center","TG6"]],"c":"s","n":""},{"l":"TG5-4","b":33000000,"w":33000000,"s":6700000,"i":1600000,"tg":90,"tt":4,"t":194400,"p":[["Town Center","TG6"]],"c":"s","n":""},{"l":"TG6","b":33000000,"w":33000000,"s":6700000,"i":1600000,"tg":45,"tt":9,"t":194400,"p":[["Town Center","TG6"]],"c":"s","n":"Final step of this TG band."},{"l":"TG6-1","b":38000000,"w":38000000,"s":7600000,"i":1900000,"tg":108,"tt":6,"t":233280,"p":[["Town Center","TG7"]],"c":"s","n":""},{"l":"TG6-2","b":38000000,"w":38000000,"s":7600000,"i":1900000,"tg":108,"tt":6,"t":233280,"p":[["Town Center","TG7"]],"c":"s","n":""},{"l":"TG6-3","b":38000000,"w":38000000,"s":7600000,"i":1900000,"tg":108,"tt":6,"t":233280,"p":[["Town Center","TG7"]],"c":"s","n":""},{"l":"TG6-4","b":38000000,"w":38000000,"s":7600000,"i":1900000,"tg":108,"tt":6,"t":233280,"p":[["Town Center","TG7"]],"c":"s","n":""},{"l":"TG7","b":38000000,"w":38000000,"s":7600000,"i":1900000,"tg":54,"tt":13,"t":233280,"p":[["Town Center","TG7"]],"c":"s","n":"Final step of this TG band."},{"l":"TG7-1","b":46000000,"w":46000000,"s":9300000,"i":2300000,"tg":108,"tt":9,"t":259200,"p":[["Town Center","TG8"]],"c":"s","n":""},{"l":"TG7-2","b":46000000,"w":46000000,"s":9300000,"i":2300000,"tg":108,"tt":9,"t":259200,"p":[["Town Center","TG8"]],"c":"s","n":""},{"l":"TG7-3","b":46000000,"w":46000000,"s":9300000,"i":2300000,"tg":108,"tt":9,"t":259200,"p":[["Town Center","TG8"]],"c":"s","n":""},{"l":"TG7-4","b":46000000,"w":46000000,"s":9300000,"i":2300000,"tg":108,"tt":9,"t":259200,"p":[["Town Center","TG8"]],"c":"s","n":""},{"l":"TG8","b":46000000,"w":46000000,"s":9300000,"i":2300000,"tg":54,"tt":18,"t":259200,"p":[["Town Center","TG8"]],"c":"s","n":"Final step of this TG band."}],"Infirmary":[{"l":"1","b":0,"w":0,"s":0,"i":0,"tg":0,"tt":0,"t":0,"p":[["Town Center","9"]],"c":"s","n":"kingshotdata.kr lists TC 9 in the requirements column, but the building unlocks at TC 8 per the kingshotdata.com Town Center unlock list (Infirmary Lv 1 is a prereq for TC 9)."},{"l":"2","b":0,"w":100,"s":0,"i":0,"tg":0,"tt":0,"t":0,"p":[["Town Center","9"]],"c":"s","n":""},{"l":"3","b":0,"w":460,"s":0,"i":0,"tg":0,"tt":0,"t":0,"p":[["Town Center","9"]],"c":"s","n":""},{"l":"4","b":0,"w":1000,"s":205,"i":0,"tg":0,"tt":0,"t":120,"p":[["Town Center","9"]],"c":"s","n":""},{"l":"5","b":0,"w":4300,"s":865,"i":0,"tg":0,"tt":0,"t":240,"p":[["Town Center","9"]],"c":"s","n":""},{"l":"6","b":0,"w":10000,"s":2100,"i":545,"tg":0,"tt":0,"t":480,"p":[["Town Center","9"]],"c":"s","n":""},{"l":"7","b":0,"w":39000,"s":7800,"i":1900,"tg":0,"tt":0,"t":960,"p":[["Town Center","9"]],"c":"s","n":""},{"l":"8","b":0,"w":72000,"s":14000,"i":3600,"tg":0,"tt":0,"t":1500,"p":[["Town Center","9"]],"c":"s","n":""},{"l":"9","b":0,"w":140000,"s":29000,"i":7400,"tg":0,"tt":0,"t":2220,"p":[["Town Center","9"]],"c":"s","n":""},{"l":"10","b":0,"w":260000,"s":52000,"i":13000,"tg":0,"tt":0,"t":3000,"p":[["Town Center","10"]],"c":"s","n":""},{"l":"11","b":320000,"w":320000,"s":65000,"i":16000,"tg":0,"tt":0,"t":3780,"p":[["Town Center","11"]],"c":"s","n":""},{"l":"12","b":420000,"w":420000,"s":84000,"i":21000,"tg":0,"tt":0,"t":4500,"p":[["Town Center","12"]],"c":"s","n":""},{"l":"13","b":590000,"w":590000,"s":110000,"i":29000,"tg":0,"tt":0,"t":5520,"p":[["Town Center","13"]],"c":"s","n":""},{"l":"14","b":780000,"w":780000,"s":150000,"i":39000,"tg":0,"tt":0,"t":7020,"p":[["Town Center","14"]],"c":"s","n":""},{"l":"15","b":1100000,"w":1100000,"s":230000,"i":58000,"tg":0,"tt":0,"t":9060,"p":[["Town Center","15"]],"c":"s","n":""},{"l":"16","b":1400000,"w":1400000,"s":290000,"i":74000,"tg":0,"tt":0,"t":15360,"p":[["Town Center","16"]],"c":"s","n":""},{"l":"17","b":2300000,"w":2300000,"s":460000,"i":100000,"tg":0,"tt":0,"t":18420,"p":[["Town Center","17"]],"c":"s","n":""},{"l":"18","b":3100000,"w":3100000,"s":620000,"i":150000,"tg":0,"tt":0,"t":22080,"p":[["Town Center","18"]],"c":"s","n":""},{"l":"19","b":3900000,"w":3900000,"s":780000,"i":190000,"tg":0,"tt":0,"t":33180,"p":[["Town Center","19"]],"c":"s","n":""},{"l":"20","b":5300000,"w":5300000,"s":1000000,"i":260000,"tg":0,"tt":0,"t":41460,"p":[["Town Center","20"]],"c":"s","n":""},{"l":"21","b":6800000,"w":6800000,"s":1300000,"i":340000,"tg":0,"tt":0,"t":53880,"p":[["Town Center","21"]],"c":"s","n":""},{"l":"22","b":9000000,"w":9000000,"s":1800000,"i":450000,"tg":0,"tt":0,"t":80880,"p":[["Town Center","22"]],"c":"s","n":""},{"l":"23","b":11000000,"w":11000000,"s":2200000,"i":560000,"tg":0,"tt":0,"t":113220,"p":[["Town Center","23"]],"c":"s","n":""},{"l":"24","b":15000000,"w":15000000,"s":3000000,"i":750000,"tg":0,"tt":0,"t":158520,"p":[["Town Center","24"]],"c":"s","n":""},{"l":"25","b":20000000,"w":20000000,"s":4000000,"i":1000000,"tg":0,"tt":0,"t":221940,"p":[["Town Center","25"]],"c":"s","n":""},{"l":"26","b":26000000,"w":26000000,"s":5200000,"i":1300000,"tg":0,"tt":0,"t":255240,"p":[["Town Center","26"]],"c":"s","n":""},{"l":"27","b":37000000,"w":37000000,"s":7400000,"i":1800000,"tg":0,"tt":0,"t":306240,"p":[["Town Center","27"]],"c":"s","n":""},{"l":"28","b":49000000,"w":49000000,"s":9900000,"i":2400000,"tg":0,"tt":0,"t":352200,"p":[["Town Center","28"]],"c":"s","n":""},{"l":"29","b":61000000,"w":61000000,"s":12000000,"i":3000000,"tg":0,"tt":0,"t":405060,"p":[["Town Center","29"]],"c":"s","n":""},{"l":"30","b":75000000,"w":75000000,"s":15000000,"i":3700000,"tg":0,"tt":0,"t":486060,"p":[["Town Center","30"]],"c":"s","n":""},{"l":"30-1","b":16000000,"w":16000000,"s":3300000,"i":840000,"tg":26,"tt":0,"t":84660,"p":[["Town Center","TG1"]],"c":"s","n":""},{"l":"30-2","b":16000000,"w":16000000,"s":3300000,"i":840000,"tg":26,"tt":0,"t":84660,"p":[["Town Center","TG1"]],"c":"s","n":""},{"l":"30-3","b":16000000,"w":16000000,"s":3300000,"i":840000,"tg":26,"tt":0,"t":84660,"p":[["Town Center","TG1"]],"c":"s","n":""},{"l":"30-4","b":16000000,"w":16000000,"s":3300000,"i":840000,"tg":26,"tt":0,"t":84660,"p":[["Town Center","TG1"]],"c":"s","n":""},{"l":"TG1","b":16000000,"w":16000000,"s":3300000,"i":840000,"tg":26,"tt":0,"t":84660,"p":[["Town Center","TG1"]],"c":"s","n":"Final step of this TG band."},{"l":"TG1-1","b":18000000,"w":18000000,"s":3600000,"i":900000,"tg":31,"tt":0,"t":108840,"p":[["Town Center","TG2"]],"c":"s","n":""},{"l":"TG1-2","b":18000000,"w":18000000,"s":3600000,"i":900000,"tg":31,"tt":0,"t":108840,"p":[["Town Center","TG2"]],"c":"s","n":""},{"l":"TG1-3","b":18000000,"w":18000000,"s":3600000,"i":900000,"tg":31,"tt":0,"t":108840,"p":[["Town Center","TG2"]],"c":"s","n":""},{"l":"TG1-4","b":18000000,"w":18000000,"s":3600000,"i":900000,"tg":31,"tt":0,"t":108840,"p":[["Town Center","TG2"]],"c":"s","n":""},{"l":"TG2","b":18000000,"w":18000000,"s":3600000,"i":900000,"tg":31,"tt":0,"t":108840,"p":[["Town Center","TG2"]],"c":"s","n":"Final step of this TG band."},{"l":"TG2-1","b":19000000,"w":19000000,"s":3900000,"i":990000,"tg":47,"tt":0,"t":133020,"p":[["Town Center","TG3"]],"c":"s","n":""},{"l":"TG2-2","b":19000000,"w":19000000,"s":3900000,"i":990000,"tg":47,"tt":0,"t":133020,"p":[["Town Center","TG3"]],"c":"s","n":""},{"l":"TG2-3","b":19000000,"w":19000000,"s":3900000,"i":990000,"tg":47,"tt":0,"t":133020,"p":[["Town Center","TG3"]],"c":"s","n":""},{"l":"TG2-4","b":19000000,"w":19000000,"s":3900000,"i":990000,"tg":47,"tt":0,"t":133020,"p":[["Town Center","TG3"]],"c":"s","n":""},{"l":"TG3","b":19000000,"w":19000000,"s":3900000,"i":990000,"tg":47,"tt":0,"t":133020,"p":[["Town Center","TG3"]],"c":"s","n":"Final step of this TG band."},{"l":"TG3-1","b":20000000,"w":20000000,"s":4100000,"i":1000000,"tg":56,"tt":0,"t":145140,"p":[["Town Center","TG4"]],"c":"s","n":""},{"l":"TG3-2","b":20000000,"w":20000000,"s":4100000,"i":1000000,"tg":56,"tt":0,"t":145140,"p":[["Town Center","TG4"]],"c":"s","n":""},{"l":"TG3-3","b":20000000,"w":20000000,"s":4100000,"i":1000000,"tg":56,"tt":0,"t":145140,"p":[["Town Center","TG4"]],"c":"s","n":""},{"l":"TG3-4","b":20000000,"w":20000000,"s":4100000,"i":1000000,"tg":56,"tt":0,"t":145140,"p":[["Town Center","TG4"]],"c":"s","n":""},{"l":"TG4","b":20000000,"w":20000000,"s":4100000,"i":1000000,"tg":56,"tt":0,"t":145140,"p":[["Town Center","TG4"]],"c":"s","n":"Final step of this TG band."},{"l":"TG4-1","b":21000000,"w":21000000,"s":4200000,"i":1000000,"tg":67,"tt":0,"t":169320,"p":[["Town Center","TG5"]],"c":"s","n":""},{"l":"TG4-2","b":21000000,"w":21000000,"s":4200000,"i":1000000,"tg":67,"tt":0,"t":169320,"p":[["Town Center","TG5"]],"c":"s","n":""},{"l":"TG4-3","b":21000000,"w":21000000,"s":4200000,"i":1000000,"tg":67,"tt":0,"t":169320,"p":[["Town Center","TG5"]],"c":"s","n":""},{"l":"TG4-4","b":21000000,"w":21000000,"s":4200000,"i":1000000,"tg":67,"tt":0,"t":169320,"p":[["Town Center","TG5"]],"c":"s","n":""},{"l":"TG5","b":21000000,"w":21000000,"s":4200000,"i":1000000,"tg":67,"tt":0,"t":169320,"p":[["Town Center","TG5"]],"c":"s","n":"Final step of this TG band."},{"l":"TG5-1","b":24000000,"w":24000000,"s":4800000,"i":1200000,"tg":40,"tt":2,"t":181440,"p":[["Town Center","TG6"]],"c":"s","n":""},{"l":"TG5-2","b":24000000,"w":24000000,"s":4800000,"i":1200000,"tg":40,"tt":2,"t":181440,"p":[["Town Center","TG6"]],"c":"s","n":""},{"l":"TG5-3","b":24000000,"w":24000000,"s":4800000,"i":1200000,"tg":40,"tt":2,"t":181440,"p":[["Town Center","TG6"]],"c":"s","n":""},{"l":"TG5-4","b":24000000,"w":24000000,"s":4800000,"i":1200000,"tg":40,"tt":2,"t":181440,"p":[["Town Center","TG6"]],"c":"s","n":""},{"l":"TG6","b":24000000,"w":24000000,"s":4800000,"i":1200000,"tg":20,"tt":4,"t":181440,"p":[["Town Center","TG6"]],"c":"s","n":"Final step of this TG band."},{"l":"TG6-1","b":27000000,"w":27000000,"s":5400000,"i":1300000,"tg":48,"tt":3,"t":217680,"p":[["Town Center","TG7"]],"c":"s","n":""},{"l":"TG6-2","b":27000000,"w":27000000,"s":5400000,"i":1300000,"tg":48,"tt":3,"t":217680,"p":[["Town Center","TG7"]],"c":"s","n":""},{"l":"TG6-3","b":27000000,"w":27000000,"s":5400000,"i":1300000,"tg":48,"tt":3,"t":217680,"p":[["Town Center","TG7"]],"c":"s","n":""},{"l":"TG6-4","b":27000000,"w":27000000,"s":5400000,"i":1300000,"tg":48,"tt":3,"t":217680,"p":[["Town Center","TG7"]],"c":"s","n":""},{"l":"TG7","b":27000000,"w":27000000,"s":5400000,"i":1300000,"tg":24,"tt":6,"t":217680,"p":[["Town Center","TG7"]],"c":"s","n":"Final step of this TG band."},{"l":"TG7-1","b":33000000,"w":33000000,"s":6600000,"i":1600000,"tg":48,"tt":4,"t":241920,"p":[["Town Center","TG8"]],"c":"s","n":""},{"l":"TG7-2","b":33000000,"w":33000000,"s":6600000,"i":1600000,"tg":48,"tt":4,"t":241920,"p":[["Town Center","TG8"]],"c":"s","n":""},{"l":"TG7-3","b":33000000,"w":33000000,"s":6600000,"i":1600000,"tg":48,"tt":4,"t":241920,"p":[["Town Center","TG8"]],"c":"s","n":""},{"l":"TG7-4","b":33000000,"w":33000000,"s":6600000,"i":1600000,"tg":48,"tt":4,"t":241920,"p":[["Town Center","TG8"]],"c":"s","n":""},{"l":"TG8","b":33000000,"w":33000000,"s":6600000,"i":1600000,"tg":24,"tt":8,"t":241920,"p":[["Town Center","TG8"]],"c":"s","n":"Final step of this TG band."}]},"govGear":[{"s":"Green 0-star","sat":1500,"gt":15,"av":0,"st":9.35,"pw":224400,"c":"v","n":"","ti":0,"sb":2},{"s":"Green 1-star","sat":3800,"gt":40,"av":0,"st":12.75,"pw":306000,"c":"v","n":"","ti":0,"sb":2.5},{"s":"Blue 0-star","sat":7000,"gt":70,"av":0,"st":17.0,"pw":408000,"c":"v","n":"","ti":1,"sb":3},{"s":"Blue 1-star","sat":9700,"gt":95,"av":0,"st":21.25,"pw":510000,"c":"v","n":"","ti":1,"sb":3.5},{"s":"Blue 2-star","sat":1000,"gt":10,"av":45,"st":25.5,"pw":612000,"c":"v","n":"Artisan's Vision requirement begins here","ti":1,"sb":4},{"s":"Blue 3-star","sat":1000,"gt":10,"av":50,"st":29.75,"pw":714000,"c":"v","n":"","ti":1,"sb":4.5},{"s":"Purple 0-star","sat":1500,"gt":15,"av":60,"st":34.0,"pw":816000,"c":"v","n":"","ti":2,"sb":5},{"s":"Purple 1-star","sat":1500,"gt":15,"av":70,"st":36.89,"pw":885360,"c":"v","n":"","ti":2,"sb":5},{"s":"Purple 2-star","sat":6500,"gt":65,"av":40,"st":39.78,"pw":954720,"c":"v","n":"","ti":2,"sb":5},{"s":"Purple 3-star","sat":8000,"gt":80,"av":50,"st":42.67,"pw":1024080,"c":"v","n":"","ti":2,"sb":5},{"s":"Purple T1 0-star","sat":10000,"gt":95,"av":60,"st":45.56,"pw":1093440,"c":"v","n":"","ti":3,"sb":6},{"s":"Purple T1 1-star","sat":11000,"gt":110,"av":70,"st":48.45,"pw":1162800,"c":"v","n":"","ti":3,"sb":6},{"s":"Purple T1 2-star","sat":13000,"gt":130,"av":85,"st":51.34,"pw":1232160,"c":"v","n":"","ti":3,"sb":6},{"s":"Purple T1 3-star","sat":15000,"gt":160,"av":100,"st":54.23,"pw":1301520,"c":"v","n":"","ti":3,"sb":6},{"s":"Gold 0-star","sat":22000,"gt":220,"av":40,"st":56.78,"pw":1362720,"c":"v","n":"","ti":4,"sb":7},{"s":"Gold 1-star","sat":23000,"gt":230,"av":40,"st":59.33,"pw":1423920,"c":"v","n":"","ti":4,"sb":7},{"s":"Gold 2-star","sat":25000,"gt":250,"av":45,"st":61.88,"pw":1485120,"c":"v","n":"","ti":4,"sb":7},{"s":"Gold 3-star","sat":26000,"gt":260,"av":45,"st":64.43,"pw":1546320,"c":"v","n":"","ti":4,"sb":7},{"s":"Gold T1 0-star","sat":28000,"gt":280,"av":45,"st":66.98,"pw":1607520,"c":"v","n":"","ti":5,"sb":8},{"s":"Gold T1 1-star","sat":30000,"gt":300,"av":55,"st":69.53,"pw":1668720,"c":"v","n":"","ti":5,"sb":8},{"s":"Gold T1 2-star","sat":32000,"gt":320,"av":55,"st":72.08,"pw":1729920,"c":"v","n":"","ti":5,"sb":8},{"s":"Gold T1 3-star","sat":35000,"gt":340,"av":55,"st":74.63,"pw":1791120,"c":"v","n":"","ti":5,"sb":8},{"s":"Gold T2 0-star","sat":38000,"gt":390,"av":55,"st":77.18,"pw":1852320,"c":"v","n":"","ti":6,"sb":9},{"s":"Gold T2 1-star","sat":43000,"gt":430,"av":75,"st":79.73,"pw":1913520,"c":"v","n":"","ti":6,"sb":9},{"s":"Gold T2 2-star","sat":45000,"gt":460,"av":80,"st":82.28,"pw":1974720,"c":"v","n":"","ti":6,"sb":9},{"s":"Gold T2 3-star","sat":48000,"gt":500,"av":85,"st":84.83,"pw":2040000,"c":"v","n":"","ti":6,"sb":9},{"s":"Gold T3 0-star","sat":60000,"gt":600,"av":120,"st":87.38,"pw":2097120,"c":"v","n":"","ti":7,"sb":10},{"s":"Gold T3 1-star","sat":70000,"gt":700,"av":140,"st":89.93,"pw":2158320,"c":"v","n":"","ti":7,"sb":10},{"s":"Gold T3 2-star","sat":80000,"gt":800,"av":160,"st":92.48,"pw":2219520,"c":"v","n":"","ti":7,"sb":10},{"s":"Gold T3 3-star","sat":90000,"gt":900,"av":180,"st":95.0,"pw":2280000,"c":"v","n":"","ti":7,"sb":10},{"s":"Red 0-star","sat":108000,"gt":1080,"av":220,"st":97.5,"pw":2340000,"c":"v","n":"","ti":8,"sb":12},{"s":"Red 1-star","sat":114000,"gt":1140,"av":230,"st":100.0,"pw":2400000,"c":"v","n":"","ti":8,"sb":12},{"s":"Red 2-star","sat":121000,"gt":1210,"av":240,"st":102.5,"pw":2460000,"c":"v","n":"","ti":8,"sb":12},{"s":"Red 3-star","sat":128000,"gt":1280,"av":250,"st":105.0,"pw":2520000,"c":"v","n":"kingshotdata.com and kingshotwiki.com show threads as '1.280' (European-format typo for 1,280); kingshot.net and h5joy confirm 1280","ti":8,"sb":12},{"s":"Red T1 0-star","sat":154000,"gt":1540,"av":300,"st":107.5,"pw":2580000,"c":"v","n":"","ti":9,"sb":14},{"s":"Red T1 1-star","sat":163000,"gt":1630,"av":320,"st":110.0,"pw":2640000,"c":"v","n":"","ti":9,"sb":14},{"s":"Red T1 2-star","sat":173000,"gt":1730,"av":340,"st":112.5,"pw":2700000,"c":"v","n":"","ti":9,"sb":14},{"s":"Red T1 3-star","sat":183000,"gt":1830,"av":360,"st":115.0,"pw":2760000,"c":"v","n":"","ti":9,"sb":14},{"s":"Red T2 0-star","sat":220000,"gt":2200,"av":430,"st":117.5,"pw":2820000,"c":"v","n":"","ti":10,"sb":16.5},{"s":"Red T2 1-star","sat":233000,"gt":2330,"av":460,"st":120.0,"pw":2880000,"c":"v","n":"","ti":10,"sb":16.5},{"s":"Red T2 2-star","sat":247000,"gt":2470,"av":490,"st":122.5,"pw":2940000,"c":"v","n":"","ti":10,"sb":16.5},{"s":"Red T2 3-star","sat":264000,"gt":2640,"av":520,"st":125.0,"pw":3000000,"c":"v","n":"","ti":10,"sb":16.5},{"s":"Red T3 0-star","sat":288000,"gt":2880,"av":570,"st":127.75,"pw":3066000,"c":"v","n":"Confirmed vs kingshotoptimizer + kingshot.net (July 2026); older wiki/kingshotdata listed ~6-11% higher pre-rebalance values","ti":11,"sb":19.5},{"s":"Red T3 1-star","sat":302000,"gt":3020,"av":600,"st":130.5,"pw":3132000,"c":"v","n":"Confirmed vs kingshotoptimizer + kingshot.net (July 2026); older wiki/kingshotdata listed ~6-11% higher pre-rebalance values","ti":11,"sb":19.5},{"s":"Red T3 2-star","sat":317000,"gt":3170,"av":630,"st":133.25,"pw":3198000,"c":"v","n":"Confirmed vs kingshotoptimizer + kingshot.net (July 2026); older wiki/kingshotdata listed ~6-11% higher pre-rebalance values","ti":11,"sb":19.5},{"s":"Red T3 3-star","sat":333000,"gt":3330,"av":660,"st":136.0,"pw":3264000,"c":"v","n":"Confirmed vs kingshotoptimizer + kingshot.net (July 2026); older wiki/kingshotdata listed ~6-11% higher pre-rebalance values","ti":11,"sb":19.5},{"s":"Red T4 0-star","sat":358000,"gt":3580,"av":720,"st":138.75,"pw":3330000,"c":"v","n":"Confirmed vs kingshotoptimizer + kingshot.net (July 2026); older wiki/kingshotdata listed ~6-11% higher pre-rebalance values","ti":12,"sb":23},{"s":"Red T4 1-star","sat":384000,"gt":3840,"av":770,"st":141.5,"pw":3396000,"c":"v","n":"Confirmed vs kingshotoptimizer + kingshot.net (July 2026); older wiki/kingshotdata listed ~6-11% higher pre-rebalance values","ti":12,"sb":23},{"s":"Red T4 2-star","sat":403000,"gt":4030,"av":810,"st":144.25,"pw":3462000,"c":"v","n":"Confirmed vs kingshotoptimizer + kingshot.net (July 2026); older wiki/kingshotdata listed ~6-11% higher pre-rebalance values","ti":12,"sb":23},{"s":"Red T4 3-star","sat":423000,"gt":4230,"av":850,"st":147.0,"pw":3528000,"c":"v","n":"Confirmed vs kingshotoptimizer + kingshot.net (July 2026); older wiki/kingshotdata listed ~6-11% higher pre-rebalance values","ti":12,"sb":23},{"s":"Red T5 0-star","sat":451000,"gt":4510,"av":910,"st":150.0,"pw":3600000,"c":"v","n":"Official wiki + kingshot.net agree. Satin lower than Red T4 3-star in official-wiki dataset (non-monotonic)","ti":13,"sb":26.5},{"s":"Red T5 1-star","sat":479000,"gt":4790,"av":970,"st":153.0,"pw":3672000,"c":"v","n":"","ti":13,"sb":26.5},{"s":"Red T5 2-star","sat":507000,"gt":5070,"av":1030,"st":156.0,"pw":3744000,"c":"v","n":"","ti":13,"sb":26.5},{"s":"Red T5 3-star","sat":535000,"gt":5350,"av":1090,"st":159.0,"pw":3816000,"c":"v","n":"","ti":13,"sb":26.5},{"s":"Red T6 0-star","sat":548000,"gt":5480,"av":1110,"st":162.0,"pw":3888000,"c":"v","n":"","ti":14,"sb":30},{"s":"Red T6 1-star","sat":565000,"gt":5650,"av":1140,"st":165.0,"pw":3960000,"c":"v","n":"","ti":14,"sb":30},{"s":"Red T6 2-star","sat":582000,"gt":5820,"av":1170,"st":168.0,"pw":4032000,"c":"v","n":"","ti":14,"sb":30},{"s":"Red T6 3-star","sat":599000,"gt":5990,"av":1210,"st":171.0,"pw":4104000,"c":"v","n":"Current max (July 2026)","ti":14,"sb":30}],"charms":[{"l":1,"g":5,"d":5,"st":9,"c":"v"},{"l":2,"g":40,"d":15,"st":12,"c":"v"},{"l":3,"g":60,"d":40,"st":16,"c":"v"},{"l":4,"g":80,"d":100,"st":19,"c":"v"},{"l":5,"g":100,"d":200,"st":25,"c":"v"},{"l":6,"g":120,"d":300,"st":30,"c":"v"},{"l":7,"g":140,"d":400,"st":35,"c":"v"},{"l":8,"g":200,"d":400,"st":40,"c":"v"},{"l":9,"g":300,"d":400,"st":45,"c":"v"},{"l":10,"g":420,"d":420,"st":50,"c":"v"},{"l":11,"g":560,"d":420,"st":55,"c":"v"},{"l":12,"g":580,"d":600,"st":59,"c":"v"},{"l":13,"g":610,"d":780,"st":63,"c":"v"},{"l":14,"g":645,"d":960,"st":67,"c":"v"},{"l":15,"g":685,"d":1140,"st":71,"c":"v"},{"l":16,"g":730,"d":1320,"st":75,"c":"v"},{"l":17,"g":780,"d":1500,"st":79,"c":"v"},{"l":18,"g":835,"d":1680,"st":83,"c":"v"},{"l":19,"g":895,"d":1860,"st":87,"c":"v"},{"l":20,"g":960,"d":2040,"st":91,"c":"v"},{"l":21,"g":1030,"d":2220,"st":95,"c":"v"},{"l":22,"g":1105,"d":2400,"st":99,"c":"v"}],"heroGear":[{"l":1,"xp":10,"mi":0,"mg":0,"c":"v","n":""},{"l":2,"xp":15,"mi":0,"mg":0,"c":"v","n":""},{"l":3,"xp":20,"mi":0,"mg":0,"c":"v","n":""},{"l":4,"xp":25,"mi":0,"mg":0,"c":"v","n":""},{"l":5,"xp":30,"mi":0,"mg":0,"c":"v","n":""},{"l":6,"xp":35,"mi":0,"mg":0,"c":"v","n":""},{"l":7,"xp":40,"mi":0,"mg":0,"c":"v","n":""},{"l":8,"xp":45,"mi":0,"mg":0,"c":"v","n":""},{"l":9,"xp":50,"mi":0,"mg":0,"c":"v","n":""},{"l":10,"xp":55,"mi":0,"mg":0,"c":"v","n":""},{"l":11,"xp":60,"mi":0,"mg":0,"c":"v","n":""},{"l":12,"xp":65,"mi":0,"mg":0,"c":"v","n":""},{"l":13,"xp":70,"mi":0,"mg":0,"c":"v","n":""},{"l":14,"xp":75,"mi":0,"mg":0,"c":"v","n":""},{"l":15,"xp":80,"mi":0,"mg":0,"c":"v","n":""},{"l":16,"xp":85,"mi":0,"mg":0,"c":"v","n":""},{"l":17,"xp":90,"mi":0,"mg":0,"c":"v","n":""},{"l":18,"xp":95,"mi":0,"mg":0,"c":"v","n":""},{"l":19,"xp":100,"mi":0,"mg":0,"c":"v","n":""},{"l":20,"xp":105,"mi":0,"mg":0,"c":"v","n":""},{"l":21,"xp":110,"mi":0,"mg":0,"c":"v","n":""},{"l":22,"xp":115,"mi":0,"mg":0,"c":"v","n":""},{"l":23,"xp":120,"mi":0,"mg":0,"c":"v","n":""},{"l":24,"xp":125,"mi":0,"mg":0,"c":"v","n":""},{"l":25,"xp":130,"mi":0,"mg":0,"c":"v","n":""},{"l":26,"xp":135,"mi":0,"mg":0,"c":"v","n":""},{"l":27,"xp":140,"mi":0,"mg":0,"c":"v","n":""},{"l":28,"xp":145,"mi":0,"mg":0,"c":"v","n":""},{"l":29,"xp":150,"mi":0,"mg":0,"c":"v","n":""},{"l":30,"xp":160,"mi":0,"mg":0,"c":"v","n":""},{"l":31,"xp":170,"mi":0,"mg":0,"c":"v","n":""},{"l":32,"xp":180,"mi":0,"mg":0,"c":"v","n":""},{"l":33,"xp":190,"mi":0,"mg":0,"c":"v","n":""},{"l":34,"xp":200,"mi":0,"mg":0,"c":"v","n":""},{"l":35,"xp":210,"mi":0,"mg":0,"c":"v","n":""},{"l":36,"xp":220,"mi":0,"mg":0,"c":"v","n":""},{"l":37,"xp":230,"mi":0,"mg":0,"c":"v","n":""},{"l":38,"xp":240,"mi":0,"mg":0,"c":"v","n":""},{"l":39,"xp":250,"mi":0,"mg":0,"c":"v","n":""},{"l":40,"xp":270,"mi":0,"mg":0,"c":"v","n":""},{"l":41,"xp":290,"mi":0,"mg":0,"c":"v","n":""},{"l":42,"xp":310,"mi":0,"mg":0,"c":"v","n":""},{"l":43,"xp":330,"mi":0,"mg":0,"c":"v","n":""},{"l":44,"xp":350,"mi":0,"mg":0,"c":"v","n":""},{"l":45,"xp":370,"mi":0,"mg":0,"c":"v","n":""},{"l":46,"xp":390,"mi":0,"mg":0,"c":"v","n":""},{"l":47,"xp":410,"mi":0,"mg":0,"c":"v","n":""},{"l":48,"xp":430,"mi":0,"mg":0,"c":"v","n":""},{"l":49,"xp":450,"mi":0,"mg":0,"c":"v","n":""},{"l":50,"xp":470,"mi":0,"mg":0,"c":"v","n":""},{"l":51,"xp":490,"mi":0,"mg":0,"c":"v","n":""},{"l":52,"xp":510,"mi":0,"mg":0,"c":"v","n":""},{"l":53,"xp":530,"mi":0,"mg":0,"c":"v","n":""},{"l":54,"xp":550,"mi":0,"mg":0,"c":"v","n":""},{"l":55,"xp":570,"mi":0,"mg":0,"c":"v","n":""},{"l":56,"xp":590,"mi":0,"mg":0,"c":"v","n":""},{"l":57,"xp":610,"mi":0,"mg":0,"c":"v","n":""},{"l":58,"xp":630,"mi":0,"mg":0,"c":"v","n":""},{"l":59,"xp":650,"mi":0,"mg":0,"c":"v","n":""},{"l":60,"xp":680,"mi":0,"mg":0,"c":"v","n":""},{"l":61,"xp":710,"mi":0,"mg":0,"c":"v","n":""},{"l":62,"xp":740,"mi":0,"mg":0,"c":"v","n":""},{"l":63,"xp":770,"mi":0,"mg":0,"c":"v","n":""},{"l":64,"xp":800,"mi":0,"mg":0,"c":"v","n":""},{"l":65,"xp":830,"mi":0,"mg":0,"c":"v","n":""},{"l":66,"xp":860,"mi":0,"mg":0,"c":"v","n":""},{"l":67,"xp":890,"mi":0,"mg":0,"c":"v","n":""},{"l":68,"xp":920,"mi":0,"mg":0,"c":"v","n":""},{"l":69,"xp":950,"mi":0,"mg":0,"c":"v","n":""},{"l":70,"xp":990,"mi":0,"mg":0,"c":"v","n":""},{"l":71,"xp":1030,"mi":0,"mg":0,"c":"v","n":""},{"l":72,"xp":1070,"mi":0,"mg":0,"c":"v","n":""},{"l":73,"xp":1110,"mi":0,"mg":0,"c":"v","n":""},{"l":74,"xp":1150,"mi":0,"mg":0,"c":"v","n":""},{"l":75,"xp":1190,"mi":0,"mg":0,"c":"v","n":""},{"l":76,"xp":1230,"mi":0,"mg":0,"c":"v","n":""},{"l":77,"xp":1270,"mi":0,"mg":0,"c":"v","n":""},{"l":78,"xp":1310,"mi":0,"mg":0,"c":"v","n":""},{"l":79,"xp":1350,"mi":0,"mg":0,"c":"v","n":""},{"l":80,"xp":1400,"mi":0,"mg":0,"c":"v","n":""},{"l":81,"xp":1450,"mi":0,"mg":0,"c":"v","n":""},{"l":82,"xp":1500,"mi":0,"mg":0,"c":"v","n":""},{"l":83,"xp":1550,"mi":0,"mg":0,"c":"v","n":""},{"l":84,"xp":1600,"mi":0,"mg":0,"c":"v","n":""},{"l":85,"xp":1650,"mi":0,"mg":0,"c":"v","n":""},{"l":86,"xp":1700,"mi":0,"mg":0,"c":"v","n":""},{"l":87,"xp":1750,"mi":0,"mg":0,"c":"v","n":""},{"l":88,"xp":1800,"mi":0,"mg":0,"c":"v","n":""},{"l":89,"xp":1850,"mi":0,"mg":0,"c":"v","n":""},{"l":90,"xp":1900,"mi":0,"mg":0,"c":"v","n":""},{"l":91,"xp":1950,"mi":0,"mg":0,"c":"v","n":""},{"l":92,"xp":2000,"mi":0,"mg":0,"c":"v","n":""},{"l":93,"xp":2050,"mi":0,"mg":0,"c":"v","n":""},{"l":94,"xp":2100,"mi":0,"mg":0,"c":"v","n":""},{"l":95,"xp":2150,"mi":0,"mg":0,"c":"v","n":""},{"l":96,"xp":2200,"mi":0,"mg":0,"c":"v","n":""},{"l":97,"xp":2250,"mi":0,"mg":0,"c":"v","n":""},{"l":98,"xp":2300,"mi":0,"mg":0,"c":"v","n":""},{"l":99,"xp":2350,"mi":0,"mg":0,"c":"v","n":""},{"l":100,"xp":2400,"mi":0,"mg":0,"c":"v","n":""},{"l":101,"xp":0,"mi":0,"mg":2,"c":"v","n":"Milestone imbuement"},{"l":102,"xp":2500,"mi":0,"mg":0,"c":"v","n":""},{"l":103,"xp":2550,"mi":0,"mg":0,"c":"v","n":""},{"l":104,"xp":2600,"mi":0,"mg":0,"c":"v","n":""},{"l":105,"xp":2650,"mi":0,"mg":0,"c":"v","n":""},{"l":106,"xp":2700,"mi":0,"mg":0,"c":"v","n":""},{"l":107,"xp":2750,"mi":0,"mg":0,"c":"v","n":""},{"l":108,"xp":2800,"mi":0,"mg":0,"c":"v","n":""},{"l":109,"xp":2850,"mi":0,"mg":0,"c":"v","n":""},{"l":110,"xp":2900,"mi":0,"mg":0,"c":"v","n":""},{"l":111,"xp":2950,"mi":0,"mg":0,"c":"v","n":""},{"l":112,"xp":3000,"mi":0,"mg":0,"c":"v","n":""},{"l":113,"xp":3050,"mi":0,"mg":0,"c":"v","n":""},{"l":114,"xp":3100,"mi":0,"mg":0,"c":"v","n":""},{"l":115,"xp":3150,"mi":0,"mg":0,"c":"v","n":""},{"l":116,"xp":3200,"mi":0,"mg":0,"c":"v","n":""},{"l":117,"xp":3250,"mi":0,"mg":0,"c":"v","n":""},{"l":118,"xp":3300,"mi":0,"mg":0,"c":"v","n":""},{"l":119,"xp":3350,"mi":0,"mg":0,"c":"v","n":""},{"l":120,"xp":0,"mi":10,"mg":3,"c":"v","n":"Milestone imbuement"},{"l":121,"xp":3450,"mi":0,"mg":0,"c":"v","n":"Confirmed vs kingshotoptimizer (kingshotdata lists +50/level here)"},{"l":122,"xp":3500,"mi":0,"mg":0,"c":"v","n":"Confirmed vs kingshotoptimizer (kingshotdata lists +50/level here)"},{"l":123,"xp":3550,"mi":0,"mg":0,"c":"v","n":"Confirmed vs kingshotoptimizer (kingshotdata lists +50/level here)"},{"l":124,"xp":3600,"mi":0,"mg":0,"c":"v","n":"Confirmed vs kingshotoptimizer (kingshotdata lists +50/level here)"},{"l":125,"xp":3650,"mi":0,"mg":0,"c":"v","n":"Confirmed vs kingshotoptimizer (kingshotdata lists +50/level here)"},{"l":126,"xp":3700,"mi":0,"mg":0,"c":"v","n":"Confirmed vs kingshotoptimizer (kingshotdata lists +50/level here)"},{"l":127,"xp":3750,"mi":0,"mg":0,"c":"v","n":"Confirmed vs kingshotoptimizer (kingshotdata lists +50/level here)"},{"l":128,"xp":3800,"mi":0,"mg":0,"c":"v","n":"Confirmed vs kingshotoptimizer (kingshotdata lists +50/level here)"},{"l":129,"xp":3850,"mi":0,"mg":0,"c":"v","n":"Confirmed vs kingshotoptimizer (kingshotdata lists +50/level here)"},{"l":130,"xp":3900,"mi":0,"mg":0,"c":"v","n":"Confirmed vs kingshotoptimizer (kingshotdata lists +50/level here)"},{"l":131,"xp":3950,"mi":0,"mg":0,"c":"v","n":"Confirmed vs kingshotoptimizer (kingshotdata lists +50/level here)"},{"l":132,"xp":4000,"mi":0,"mg":0,"c":"v","n":"Confirmed vs kingshotoptimizer (kingshotdata lists +50/level here)"},{"l":133,"xp":4050,"mi":0,"mg":0,"c":"v","n":"Confirmed vs kingshotoptimizer (kingshotdata lists +50/level here)"},{"l":134,"xp":4100,"mi":0,"mg":0,"c":"v","n":"Confirmed vs kingshotoptimizer (kingshotdata lists +50/level here)"},{"l":135,"xp":4150,"mi":0,"mg":0,"c":"v","n":"Confirmed vs kingshotoptimizer (kingshotdata lists +50/level here)"},{"l":136,"xp":4200,"mi":0,"mg":0,"c":"v","n":"Confirmed vs kingshotoptimizer (kingshotdata lists +50/level here)"},{"l":137,"xp":4250,"mi":0,"mg":0,"c":"v","n":"Confirmed vs kingshotoptimizer (kingshotdata lists +50/level here)"},{"l":138,"xp":4300,"mi":0,"mg":0,"c":"v","n":"Confirmed vs kingshotoptimizer (kingshotdata lists +50/level here)"},{"l":139,"xp":4350,"mi":0,"mg":0,"c":"v","n":"Confirmed vs kingshotoptimizer (kingshotdata lists +50/level here)"},{"l":140,"xp":0,"mi":20,"mg":5,"c":"v","n":"Milestone imbuement"},{"l":141,"xp":4450,"mi":0,"mg":0,"c":"v","n":""},{"l":142,"xp":4500,"mi":0,"mg":0,"c":"v","n":""},{"l":143,"xp":4550,"mi":0,"mg":0,"c":"v","n":""},{"l":144,"xp":4600,"mi":0,"mg":0,"c":"v","n":""},{"l":145,"xp":4650,"mi":0,"mg":0,"c":"v","n":""},{"l":146,"xp":4700,"mi":0,"mg":0,"c":"v","n":""},{"l":147,"xp":4750,"mi":0,"mg":0,"c":"v","n":""},{"l":148,"xp":4800,"mi":0,"mg":0,"c":"v","n":""},{"l":149,"xp":4850,"mi":0,"mg":0,"c":"v","n":""},{"l":150,"xp":4900,"mi":0,"mg":0,"c":"v","n":""},{"l":151,"xp":4950,"mi":0,"mg":0,"c":"v","n":""},{"l":152,"xp":5000,"mi":0,"mg":0,"c":"v","n":""},{"l":153,"xp":5050,"mi":0,"mg":0,"c":"v","n":""},{"l":154,"xp":5100,"mi":0,"mg":0,"c":"v","n":""},{"l":155,"xp":5150,"mi":0,"mg":0,"c":"v","n":""},{"l":156,"xp":5200,"mi":0,"mg":0,"c":"v","n":""},{"l":157,"xp":5250,"mi":0,"mg":0,"c":"v","n":""},{"l":158,"xp":5300,"mi":0,"mg":0,"c":"v","n":""},{"l":159,"xp":5350,"mi":0,"mg":0,"c":"v","n":""},{"l":160,"xp":0,"mi":30,"mg":5,"c":"v","n":"Milestone imbuement"},{"l":161,"xp":5500,"mi":0,"mg":0,"c":"v","n":""},{"l":162,"xp":5600,"mi":0,"mg":0,"c":"v","n":""},{"l":163,"xp":5700,"mi":0,"mg":0,"c":"v","n":""},{"l":164,"xp":5800,"mi":0,"mg":0,"c":"v","n":""},{"l":165,"xp":5900,"mi":0,"mg":0,"c":"v","n":""},{"l":166,"xp":6000,"mi":0,"mg":0,"c":"v","n":""},{"l":167,"xp":6100,"mi":0,"mg":0,"c":"v","n":""},{"l":168,"xp":6200,"mi":0,"mg":0,"c":"v","n":""},{"l":169,"xp":6300,"mi":0,"mg":0,"c":"v","n":""},{"l":170,"xp":6400,"mi":0,"mg":0,"c":"v","n":""},{"l":171,"xp":6500,"mi":0,"mg":0,"c":"v","n":""},{"l":172,"xp":6600,"mi":0,"mg":0,"c":"v","n":""},{"l":173,"xp":6700,"mi":0,"mg":0,"c":"v","n":""},{"l":174,"xp":6800,"mi":0,"mg":0,"c":"v","n":""},{"l":175,"xp":6900,"mi":0,"mg":0,"c":"v","n":""},{"l":176,"xp":7000,"mi":0,"mg":0,"c":"v","n":""},{"l":177,"xp":7100,"mi":0,"mg":0,"c":"v","n":""},{"l":178,"xp":7200,"mi":0,"mg":0,"c":"v","n":""},{"l":179,"xp":7300,"mi":0,"mg":0,"c":"v","n":""},{"l":180,"xp":0,"mi":40,"mg":10,"c":"v","n":"Milestone imbuement"},{"l":181,"xp":7500,"mi":0,"mg":0,"c":"v","n":""},{"l":182,"xp":7600,"mi":0,"mg":0,"c":"v","n":""},{"l":183,"xp":7700,"mi":0,"mg":0,"c":"v","n":""},{"l":184,"xp":7800,"mi":0,"mg":0,"c":"v","n":""},{"l":185,"xp":7900,"mi":0,"mg":0,"c":"v","n":""},{"l":186,"xp":8000,"mi":0,"mg":0,"c":"v","n":""},{"l":187,"xp":8100,"mi":0,"mg":0,"c":"v","n":""},{"l":188,"xp":8200,"mi":0,"mg":0,"c":"v","n":""},{"l":189,"xp":8300,"mi":0,"mg":0,"c":"v","n":""},{"l":190,"xp":8400,"mi":0,"mg":0,"c":"v","n":""},{"l":191,"xp":8500,"mi":0,"mg":0,"c":"v","n":""},{"l":192,"xp":8600,"mi":0,"mg":0,"c":"v","n":""},{"l":193,"xp":8700,"mi":0,"mg":0,"c":"v","n":""},{"l":194,"xp":8800,"mi":0,"mg":0,"c":"v","n":""},{"l":195,"xp":8900,"mi":0,"mg":0,"c":"v","n":""},{"l":196,"xp":9000,"mi":0,"mg":0,"c":"v","n":""},{"l":197,"xp":9100,"mi":0,"mg":0,"c":"v","n":""},{"l":198,"xp":9200,"mi":0,"mg":0,"c":"v","n":""},{"l":199,"xp":9300,"mi":0,"mg":0,"c":"v","n":""},{"l":200,"xp":0,"mi":50,"mg":10,"c":"v","n":"Milestone imbuement"}],"mastery":[{"l":1,"fh":10,"mg":0,"st":"Piece base stat multiplier x1.1 (+10% bonus to the piece's stat)"},{"l":2,"fh":20,"mg":0,"st":"Piece base stat multiplier x1.2 (+20% bonus to the piece's stat)"},{"l":3,"fh":30,"mg":0,"st":"Piece base stat multiplier x1.3 (+30% bonus to the piece's stat)"},{"l":4,"fh":40,"mg":0,"st":"Piece base stat multiplier x1.4 (+40% bonus to the piece's stat)"},{"l":5,"fh":50,"mg":0,"st":"Piece base stat multiplier x1.5 (+50% bonus to the piece's stat)"},{"l":6,"fh":60,"mg":0,"st":"Piece base stat multiplier x1.6 (+60% bonus to the piece's stat)"},{"l":7,"fh":70,"mg":0,"st":"Piece base stat multiplier x1.7 (+70% bonus to the piece's stat)"},{"l":8,"fh":80,"mg":0,"st":"Piece base stat multiplier x1.8 (+80% bonus to the piece's stat)"},{"l":9,"fh":90,"mg":0,"st":"Piece base stat multiplier x1.9 (+90% bonus to the piece's stat)"},{"l":10,"fh":100,"mg":0,"st":"Piece base stat multiplier x2.0 (+100% bonus to the piece's stat)"},{"l":11,"fh":110,"mg":1,"st":"Piece base stat multiplier x2.1 (+110% bonus to the piece's stat)"},{"l":12,"fh":120,"mg":2,"st":"Piece base stat multiplier x2.2 (+120% bonus to the piece's stat)"},{"l":13,"fh":130,"mg":3,"st":"Piece base stat multiplier x2.3 (+130% bonus to the piece's stat)"},{"l":14,"fh":140,"mg":4,"st":"Piece base stat multiplier x2.4 (+140% bonus to the piece's stat)"},{"l":15,"fh":150,"mg":5,"st":"Piece base stat multiplier x2.5 (+150% bonus to the piece's stat)"},{"l":16,"fh":160,"mg":6,"st":"Piece base stat multiplier x2.6 (+160% bonus to the piece's stat)"},{"l":17,"fh":170,"mg":7,"st":"Piece base stat multiplier x2.7 (+170% bonus to the piece's stat)"},{"l":18,"fh":180,"mg":8,"st":"Piece base stat multiplier x2.8 (+180% bonus to the piece's stat)"},{"l":19,"fh":190,"mg":9,"st":"Piece base stat multiplier x2.9 (+190% bonus to the piece's stat)"},{"l":20,"fh":200,"mg":10,"st":"Piece base stat multiplier x3.0 (+200% bonus to the piece's stat)"}],"excl":[{"l":1,"w":5},{"l":2,"w":10},{"l":3,"w":15},{"l":4,"w":20},{"l":5,"w":25},{"l":6,"w":30},{"l":7,"w":35},{"l":8,"w":40},{"l":9,"w":45},{"l":10,"w":50}],"heroXP":[{"l":1,"xp":0,"c":"v"},{"l":2,"xp":480,"c":"s"},{"l":3,"xp":690,"c":"s"},{"l":4,"xp":920,"c":"s"},{"l":5,"xp":1200,"c":"s"},{"l":6,"xp":1500,"c":"s"},{"l":7,"xp":1800,"c":"s"},{"l":8,"xp":2200,"c":"s"},{"l":9,"xp":2600,"c":"s"},{"l":10,"xp":3100,"c":"s"},{"l":11,"xp":3800,"c":"s"},{"l":12,"xp":4200,"c":"s"},{"l":13,"xp":5100,"c":"s"},{"l":14,"xp":5700,"c":"s"},{"l":15,"xp":6800,"c":"s"},{"l":16,"xp":7800,"c":"s"},{"l":17,"xp":8900,"c":"s"},{"l":18,"xp":10000,"c":"s"},{"l":19,"xp":12000,"c":"s"},{"l":20,"xp":13000,"c":"s"},{"l":21,"xp":14000,"c":"s"},{"l":22,"xp":15000,"c":"s"},{"l":23,"xp":16000,"c":"s"},{"l":24,"xp":17000,"c":"s"},{"l":25,"xp":18000,"c":"s"},{"l":26,"xp":19000,"c":"s"},{"l":27,"xp":20000,"c":"s"},{"l":28,"xp":21000,"c":"s"},{"l":29,"xp":22000,"c":"s"},{"l":30,"xp":24000,"c":"s"},{"l":31,"xp":26000,"c":"s"},{"l":32,"xp":28000,"c":"s"},{"l":33,"xp":30000,"c":"s"},{"l":34,"xp":32000,"c":"s"},{"l":35,"xp":36000,"c":"s"},{"l":36,"xp":40000,"c":"s"},{"l":37,"xp":44000,"c":"s"},{"l":38,"xp":48000,"c":"s"},{"l":39,"xp":52000,"c":"s"},{"l":40,"xp":58000,"c":"s"},{"l":41,"xp":64000,"c":"s"},{"l":42,"xp":70000,"c":"s"},{"l":43,"xp":76000,"c":"s"},{"l":44,"xp":82000,"c":"s"},{"l":45,"xp":90000,"c":"s"},{"l":46,"xp":98000,"c":"s"},{"l":47,"xp":100000,"c":"s"},{"l":48,"xp":110000,"c":"s"},{"l":49,"xp":120000,"c":"s"},{"l":50,"xp":130000,"c":"s"},{"l":51,"xp":140000,"c":"v"},{"l":52,"xp":150000,"c":"v"},{"l":53,"xp":160000,"c":"v"},{"l":54,"xp":170000,"c":"v"},{"l":55,"xp":190000,"c":"v"},{"l":56,"xp":210000,"c":"v"},{"l":57,"xp":230000,"c":"v"},{"l":58,"xp":250000,"c":"v"},{"l":59,"xp":270000,"c":"v"},{"l":60,"xp":300000,"c":"v"},{"l":61,"xp":330000,"c":"v"},{"l":62,"xp":360000,"c":"v"},{"l":63,"xp":390000,"c":"v"},{"l":64,"xp":420000,"c":"v"},{"l":65,"xp":470000,"c":"v"},{"l":66,"xp":520000,"c":"v"},{"l":67,"xp":570000,"c":"v"},{"l":68,"xp":620000,"c":"v"},{"l":69,"xp":670000,"c":"v"},{"l":70,"xp":770000,"c":"v"},{"l":71,"xp":870000,"c":"s"},{"l":72,"xp":970000,"c":"s"},{"l":73,"xp":1000000,"c":"s"},{"l":74,"xp":1100000,"c":"s"},{"l":75,"xp":1300000,"c":"s"},{"l":76,"xp":1500000,"c":"s"},{"l":77,"xp":1700000,"c":"s"},{"l":78,"xp":1900000,"c":"s"},{"l":79,"xp":2100000,"c":"s"},{"l":80,"xp":2400000,"c":"s"}],"asc":[{"s":"unlock (0-star)","sh":10},{"s":"0-star tier 1","sh":1},{"s":"0-star tier 2","sh":1},{"s":"0-star tier 3","sh":2},{"s":"0-star tier 4","sh":2},{"s":"0-star tier 5","sh":2},{"s":"0-star tier 6 (-> 1 star)","sh":2},{"s":"1-star tier 1","sh":5},{"s":"1-star tier 2","sh":5},{"s":"1-star tier 3","sh":5},{"s":"1-star tier 4","sh":5},{"s":"1-star tier 5","sh":5},{"s":"1-star tier 6 (-> 2 star)","sh":15},{"s":"2-star tier 1","sh":15},{"s":"2-star tier 2","sh":15},{"s":"2-star tier 3","sh":15},{"s":"2-star tier 4","sh":15},{"s":"2-star tier 5","sh":15},{"s":"2-star tier 6 (-> 3 star)","sh":40},{"s":"3-star tier 1","sh":40},{"s":"3-star tier 2","sh":40},{"s":"3-star tier 3","sh":40},{"s":"3-star tier 4","sh":40},{"s":"3-star tier 5","sh":40},{"s":"3-star tier 6 (-> 4 star)","sh":100},{"s":"4-star tier 1","sh":100},{"s":"4-star tier 2","sh":100},{"s":"4-star tier 3","sh":100},{"s":"4-star tier 4","sh":100},{"s":"4-star tier 5","sh":100},{"s":"4-star tier 6 (-> 5 star MAX)","sh":100}],"masters":{"Valora":{"br":[{"lv":10,"e":5,"c":"v"},{"lv":20,"e":10,"c":"v"},{"lv":30,"e":15,"c":"v"},{"lv":40,"e":20,"c":"v"},{"lv":50,"e":25,"c":"v"},{"lv":60,"e":30,"c":"v"},{"lv":70,"e":35,"c":"v"},{"lv":80,"e":40,"c":"v"},{"lv":90,"e":45,"c":"v"},{"lv":100,"e":50,"c":"v"}],"sk":{"Dance of the Hunt":{"unlock":"available from start","max":10,"xp":[3600,7200,10800,14400,18000,21600,25200,28800,32400],"ms":[70,140,210,280,350,420,490,560,630]},"Leader by Example":{"unlock":"Rel. Lv 20","max":5,"xp":[27600,55200,110400,220800],"ms":[400,800,1600,3200]},"Weapon Obsession":{"unlock":"Rel. Lv 30","max":5,"xp":[43200,86400,172800,345600],"ms":[500,1000,2000,4000]},"Savage Advantage":{"unlock":"Rel. Lv 40","max":10,"xp":[10200,20400,30600,41400,51600,61800,72600,82800,93000],"ms":[100,200,300,400,500,600,700,800,900]}}},"Pan":{"br":[{"lv":10,"e":5,"c":"v"},{"lv":20,"e":10,"c":"v"},{"lv":30,"e":15,"c":"v"},{"lv":40,"e":20,"c":"v"},{"lv":50,"e":25,"c":"v"},{"lv":60,"e":30,"c":"v"},{"lv":70,"e":35,"c":"v"},{"lv":80,"e":40,"c":"v"},{"lv":90,"e":45,"c":"v"},{"lv":100,"e":50,"c":"v"}],"sk":{"Falconer":{"unlock":"Rel. Lv 10","max":5,"xp":[43200,86400,172800,345600],"ms":[500,1000,2000,4000]},"Good Steward":{"unlock":"Rel. Lv 20","max":5,"xp":[34200,69000,138000,276000],"ms":[400,800,1600,3200]},"Master Architect":{"unlock":"Rel. Lv 30","max":5,"xp":[13800,27600,55200,110400],"ms":[200,400,800,1600]},"Ways and Means":{"unlock":"Rel. Lv 40","max":10,"xp":[10200,20400,30600,41400,51600,61800,72600,82800,93000],"ms":[100,200,300,400,500,600,700,800,900]}}},"Roman":{"br":[{"lv":10,"e":8,"c":"v"},{"lv":20,"e":16,"c":"v"},{"lv":30,"e":24,"c":"v"},{"lv":40,"e":32,"c":"v"},{"lv":50,"e":40,"c":"v"},{"lv":60,"e":48,"c":"v"},{"lv":70,"e":56,"c":"v"},{"lv":80,"e":64,"c":"v"},{"lv":90,"e":72,"c":"v"},{"lv":100,"e":80,"c":"v"}],"sk":{"Teacher of Champions":{"unlock":"Rel. Lv 10","max":10,"xp":[82800,165600,248400,331800,414600,497400,580200,663600,746400],"ms":[600,1200,1800,2400,3000,3600,4200,4800,5400]},"Winner Take All":{"unlock":"Rel. Lv 20","max":10,"xp":[30600,61800,93000,124200,155400,186600,217200,248400,279600],"ms":[300,600,900,1200,1500,1800,2100,2400,2700]},"Crowd Favorite":{"unlock":"Rel. Lv 30","max":10,"xp":[30600,61800,93000,124200,155400,186600,217200,248400,279600],"ms":[300,600,900,1200,1500,1800,2100,2400,2700]},"One Desire":{"unlock":"Rel. Lv 40","max":10,"xp":[82800,165600,248400,331800,414600,497400,580200,663600,746400],"ms":[600,1200,1800,2400,3000,3600,4200,4800,5400]}}},"Cassia":{"br":[{"lv":10,"e":20,"c":"v"},{"lv":20,"e":40,"c":"v"},{"lv":30,"e":80,"c":"v"},{"lv":40,"e":120,"c":"v"},{"lv":50,"e":160,"c":"v"},{"lv":60,"e":200,"c":"v"},{"lv":70,"e":240,"c":"v"},{"lv":80,"e":280,"c":"v"},{"lv":90,"e":320,"c":"v"},{"lv":100,"e":360,"c":"v"}],"sk":{"Recruiter In Chief":{"unlock":"Rel. Lv 10","max":10,"xp":[30600,61800,93000,124200,155400,186600,217200,248400,279600],"ms":[300,600,900,1200,1500,1800,2100,2400,2700]},"Firepower to Win":{"unlock":"Rel. Lv 20","max":20,"xp":[86400,172800,259200,345600,432000,518400,604800,691200,777600,864000,950400,1036800,1209600,1382400,1382400,1555200,1555200,1728000,1728000],"ms":[500,1000,1500,2000,2500,3000,3500,4000,4500,5000,5500,6000,7000,8000,8000,9000,9000,10000,10000]},"Commando":{"unlock":"Rel. Lv 30","max":20,"xp":[159000,297600,436800,595800,754800,894000,1033200,1192200,1351200,1490400,1629000,1788000,2086200,2384400,2384400,2682600,2682600,2980800,2980800],"ms":[800,1500,2200,3000,3800,4500,5200,6000,6800,7500,8200,9000,10500,12000,12000,13500,13500,15000,15000]},"Inspiring Mobilization":{"unlock":"Rel. Lv 40","max":20,"xp":[179400,336600,493800,673800,853200,1010400,1167600,1347600,1527600,1684800,1842000,2021400,2358600,2695200,2695200,3032400,3032400,3369600,3369600],"ms":[800,1500,2200,3000,3800,4500,5200,6000,6800,7500,8200,9000,10500,12000,12000,13500,13500,15000,15000]}}}},"meta":{"researched":"2026-07-07","sources":["https://kingshot.fandom.com/wiki/Hero_Star_Upgrade_Requirements","https://kingshot.net/building-calculator (construction buff inputs: Wolf Pet, Chief Minister, Ground Works +10%, Double Time -20%, Combined Speed Bonus)","https://kingshot.net/database/governor-charm","https://kingshot.net/database/governor-gear","https://kingshot.net/database/truegold-requirements","https://kingshot.net/hero-exclusive-gear-calculator","https://kingshot.net/hero-shard-calculator (alternative shard UI + cost table)","https://kingshot.net/heroes (cross-check roster: rarity/gen/class; calls Mythic 'Legendary'; missing Forrest and Gen 7)","https://kingshotdata.com/buildings/academy/","https://kingshotdata.com/buildings/barracks/","https://kingshotdata.com/buildings/command-center/","https://kingshotdata.com/buildings/embassy/","https://kingshotdata.com/buildings/range/","https://kingshotdata.com/buildings/stable/","https://kingshotdata.com/buildings/town-center/","https://kingshotdata.com/database/governor-charm/","https://kingshotdata.com/database/governor-gear/","https://kingshotdata.com/database/hero-gear-enhancement-chart/","https://kingshotdata.com/database/hero-shards/","https://kingshotdata.com/database/hero-shards/ (shard costs 1065 total, Amadeus 20 / Chenko 40 unlock, General vs Specific shard rules)","https://kingshotdata.com/database/mastery-forging/","https://kingshotdata.com/database/max-levels/","https://kingshotdata.com/database/widgets/","https://kingshotdata.com/heroes/ (full roster by generation, incl. Gen 7, fetched 2026-07-09)","https://kingshotdata.com/heroes/amadeus (Amadeus exclusivity: Hall of Governors / VIP packs)","https://kingshotdata.com/heroes/forrest (Forrest = Rare Infantry, added July 2025)","https://kingshotdata.com/heroes/generation-7-heroes/ (Gen 7 release date, hero details)","https://kingshotdata.com/masters/cassia/","https://kingshotdata.com/masters/pan/","https://kingshotdata.com/masters/roman/","https://kingshotdata.com/masters/valora/","https://kingshotdata.kr/en/buildings/academy.html","https://kingshotdata.kr/en/buildings/infirmary.html","https://kingshotdata.kr/en/buildings/town-center.html","https://kingshotdata.kr/en/guides/truegold.html","https://kingshotguides.com/guide/in-depth-hero-gear-guide-by-gdkp/","https://kingshothandbook.com/guides/kingshot-hero-ascension-guide","https://kingshotmastery.com/data/masters","https://kingshotmastery.com/guides/kingshot-governor-gear-guide","https://kingshotmastery.com/guides/kingshot-master-academy","https://kingshotmastery.com/tools/kingshot-building-calculator (cross-check menu path and Saul-cost/Double-Time handling)","https://kingshotoptimizer.com/calculators/buildings/ (Power Score > Bonus Overview > Growth > Construction Speed path; Saul 3-15%; KvK 5%; Groundworks 10%)","https://kingshotoptimizer.com/calculators/hero-shards (shard planner UI, roster to Gen 6)","https://kingshotoptimizer.com/calculators/how-it-works (additive speed modifiers; Double Time -20% time = +25% effective speed; full shard-planner semantics)","https://kingshotoptimizer.com/hero-gear/references/forgehammer-costs/","https://kingshotoptimizer.com/hero-gear/references/imbuement-costs/","https://kingshotoptimizer.com/hero-gear/references/stat-bonuses/","https://kingshotoptimizer.com/hero-gear/references/xp-costs/","https://kingshotwiki.com/governor-gear/governor-gear/","https://ks.h5joy-games.com/gears/governor-charms/","https://ks.h5joy-games.com/gears/governor-gears/","https://ks.h5joy-games.com/guides/hero-level/","https://ks.h5joy-games.com/guides/hero-shard/ (cross-check: 1065 total, Amadeus 20 unlock, Amadeus/Helga specific-shard-only)","https://simplegameguide.com/kingshot-hero-xp-calculator/","https://www.kingshotguide.com/items","https://www.kingshotguide.org/data-center/governor-gear-kingshot"]},"tiers":[{"name":"Green","sb":2},{"name":"Blue","sb":3},{"name":"Purple","sb":5},{"name":"Purple T1","sb":6},{"name":"Gold","sb":7},{"name":"Gold T1","sb":8},{"name":"Gold T2","sb":9},{"name":"Gold T3","sb":10},{"name":"Red","sb":12},{"name":"Red T1","sb":14},{"name":"Red T2","sb":16.5},{"name":"Red T3","sb":19.5},{"name":"Red T4","sb":23},{"name":"Red T5","sb":26.5},{"name":"Red T6","sb":30}],"roster":[{"n":"Olive","r":"Rare","g":1,"cl":"Archer","so":false,"u":10},{"n":"Edwin","r":"Rare","g":1,"cl":"Cavalry","so":false,"u":10},{"n":"Seth","r":"Rare","g":1,"cl":"Infantry","so":false,"u":10},{"n":"Forrest","r":"Rare","g":1,"cl":"Infantry","so":false,"u":10},{"n":"Diana","r":"Epic","g":1,"cl":"Archer","so":false,"u":10},{"n":"Quinn","r":"Epic","g":1,"cl":"Archer","so":false,"u":10},{"n":"Chenko","r":"Epic","g":1,"cl":"Cavalry","so":false,"u":40},{"n":"Howard","r":"Epic","g":1,"cl":"Infantry","so":false,"u":10},{"n":"Gordon","r":"Epic","g":1,"cl":"Cavalry","so":false,"u":10},{"n":"Fahd","r":"Epic","g":1,"cl":"Cavalry","so":false,"u":10},{"n":"Amane","r":"Epic","g":1,"cl":"Archer","so":false,"u":10},{"n":"Yeonwoo","r":"Epic","g":1,"cl":"Archer","so":false,"u":10},{"n":"Amadeus","r":"Mythic","g":1,"cl":"Infantry","so":true,"u":20},{"n":"Helga","r":"Mythic","g":1,"cl":"Infantry","so":true,"u":10},{"n":"Jabel","r":"Mythic","g":1,"cl":"Cavalry","so":false,"u":10},{"n":"Saul","r":"Mythic","g":1,"cl":"Archer","so":false,"u":10},{"n":"Zoe","r":"Mythic","g":2,"cl":"Infantry","so":false,"u":10},{"n":"Hilde","r":"Mythic","g":2,"cl":"Cavalry","so":false,"u":10},{"n":"Marlin","r":"Mythic","g":2,"cl":"Archer","so":false,"u":10},{"n":"Eric","r":"Mythic","g":3,"cl":"Infantry","so":false,"u":10},{"n":"Petra","r":"Mythic","g":3,"cl":"Cavalry","so":false,"u":10},{"n":"Jaeger","r":"Mythic","g":3,"cl":"Archer","so":false,"u":10},{"n":"Alcar","r":"Mythic","g":4,"cl":"Infantry","so":false,"u":10},{"n":"Margot","r":"Mythic","g":4,"cl":"Cavalry","so":false,"u":10},{"n":"Rosa","r":"Mythic","g":4,"cl":"Archer","so":false,"u":10},{"n":"Long Fei","r":"Mythic","g":5,"cl":"Infantry","so":false,"u":10},{"n":"Thrud","r":"Mythic","g":5,"cl":"Cavalry","so":false,"u":10},{"n":"Vivian","r":"Mythic","g":5,"cl":"Archer","so":false,"u":10},{"n":"Triton","r":"Mythic","g":6,"cl":"Infantry","so":false,"u":10},{"n":"Sophia","r":"Mythic","g":6,"cl":"Cavalry","so":false,"u":10},{"n":"Yang","r":"Mythic","g":6,"cl":"Archer","so":false,"u":10},{"n":"Charles","r":"Mythic","g":7,"cl":"Infantry","so":false,"u":10},{"n":"Ava","r":"Mythic","g":7,"cl":"Cavalry","so":false,"u":10},{"n":"Wee & Woo","r":"Mythic","g":7,"cl":"Archer","so":false,"u":10}]};
+/* ============ event scoring (verified July 2026) ============ */
+const EV={
+  spmin:30, tg:2000, ttg:30000,
+  mithril:40000, forgehammer:4000, widget:8000,
+  shard:{Rare:350,Epic:1220,Mythic:3040},
+  emblem:6000, manuscript:60,
+  gearRate:36, charmRate:70,
+  gearScore:[1125,1875, 3000,4500,5100,5400, 3230,3230,3225,3225, 3440,3440,4085,4085, 6250,6250,6250,6250].concat(Array(40).fill(null)),
+  charmScore:[625,1250,3125,8750,11250,12500,12500,13000,14000,15000,16000].concat(Array(11).fill(null))
+};
+const DAYS={
+  build:{days:'SG Days 1, 2, 5, 7 · KvK Prep Days 1, 2, 5',rec:'Best day: SG Day 1 / KvK Day 1 (City Construction) — save Truegold, Tempered TG and construction speedups for it.'},
+  gear:{days:'SG Days 6, 7 · KvK Prep Day 5',rec:'Best day: SG Day 6 or KvK Day 5 — only days gear score counts. Officer Project Type 2 pays 70×36ths more per level-up if you can wait.'},
+  charm:{days:'SG Days 1, 3, 4 · KvK Prep Days 1, 3, 4',rec:'Best day: Day 3 (Skill Up) — charms, hero shards and master items all score, so you can stack categories in one day.'},
+  hgear:{days:'SG Days 2, 4, 5 · KvK Prep Days 4, 5',rec:'Best day: SG Day 2 (Hero Development) — Forgehammers, Mithril, Widgets AND shards all score together. In KvK use Day 4.'},
+  hero:{days:'SG Days 2, 3, 7 · KvK Prep Days 2, 3',rec:'Best day: SG Day 2 / KvK Day 2 — shards score alongside widgets, Forgehammers and Mithril, letting one day cover your whole hero push.'},
+  master:{days:'SG Days 2, 3 · KvK Prep Days 2, 3',rec:'Best day: Day 3 (Skill Up) — emblems and manuscripts score with charms and shards; Day 2 works if you are also dumping hero-gear materials.'}
+};
+function ggPts(ci,ti){let pts=0,unk=0;for(let i=ci+1;i<=ti;i++){const s=EV.gearScore[i];if(s==null)unk++;else pts+=s*EV.gearRate}return{pts,unk}}
+function charmPts(cl,tl){let pts=0,unk=0;for(let l=cl+1;l<=tl;l++){const s=EV.charmScore[l-1];if(s==null)unk++;else pts+=s*EV.charmRate}return{pts,unk}}
+/* ============ helpers ============ */
+const $=(s,el=document)=>el.querySelector(s), $$=(s,el=document)=>[...el.querySelectorAll(s)];
+const fmt=n=>Math.round(n).toLocaleString('en-US');
+function fmtShort(n){
+  if(n>=1e9) return (n/1e9).toFixed(n%1e9?2:0).replace(/\.?0+$/,'')+'B';
+  if(n>=1e6) return (n/1e6).toFixed(n%1e6?1:0).replace(/\.?0+$/,'')+'M';
+  if(n>=1e4) return (n/1e3).toFixed(1).replace(/\.?0+$/,'')+'K';
+  return fmt(n);
+}
+function fmtTime(s){
+  if(!s) return '0';
+  const d=Math.floor(s/86400), h=Math.floor(s%86400/3600), m=Math.floor(s%3600/60);
+  let out=[]; if(d)out.push(d+'d'); if(h)out.push(h+'h'); if(m&&!d)out.push(m+'m');
+  if(!out.length)out.push(Math.floor(s%60)+'s');
+  return out.join(' ');
+}
+function badge(c,note){
+  if(c==='v')return `<span class="badge v" title="Verified across multiple sources">✓</span>`;
+  if(c==='s')return `<span class="badge s" title="Single source — not independently verified${note?': '+esc(note):''}">⚠</span>`;
+  if(c==='c')return `<span class="badge c" title="${esc(note||'Sources conflict on this value')}">✖</span>`;
+  return '';
+}
+const esc=s=>String(s).replace(/"/g,'&quot;').replace(/</g,'&lt;');
+function totalCard(label,val,exact,cls){
+  return `<div class="total-card"><div class="tc-label">${label}</div><div class="tc-value ${cls||''} num">${typeof val==='number'?fmtShort(val):val}</div>${exact?`<div class="tc-exact num">${exact}</div>`:''}</div>`;
+}
+function ptsCard(label,val,sub){return `<div class="total-card"><div class="tc-label">${label}</div><div class="tc-value pts num">${fmtShort(val)}</div><div class="tc-exact num">${sub||fmt(val)}</div></div>`}
+function invOf(key){return Math.max(0,+(S.inv[key]||0))}
+function needCard(label,needed,invKey,cls){
+  const own=invOf(invKey),short=Math.max(0,needed-own);
+  const net=needed===0?'':short===0?`<div class="tc-net net-ok">own ${fmtShort(own)} ✓ covered</div>`:`<div class="tc-net net-short">own ${fmtShort(own)} · short ${fmtShort(short)}</div>`;
+  return `<div class="total-card"><div class="tc-label">${label}</div><div class="tc-value ${cls||''} num">${fmtShort(needed)}</div><div class="tc-exact num">${fmt(needed)}</div>${net}</div>`;
+}
+/* ============ state ============ */
+const clone=o=>JSON.parse(JSON.stringify(o));
+const DEFAULT_STATE={
+  tab:'inventory',
+  inv:{bread:0,wood:0,stone:0,iron:0,tg:0,tt:0,spd:0,sat:0,gt:0,av:0,cg:0,cd:0,xp:0,fh:0,mi:0,mg:0,wd:0,hxp:0,shR:0,shE:0,shM:0,emb:0,ms:0},
+  buffs:{cs:0,dt:false},
+  bld:{sel:'Town Center',cur:{},tgt:{},global:false},
+  gg:{cur:{},tgt:{}},
+  charm:{cur:{},tgt:{}},
+  hg:{cur:{},tgt:{},mcur:{},mtgt:{}},
+  hero:{rows:[],lvCur:1,lvTgt:1,lvN:1,exCur:0,exTgt:0,exN:1},
+  ma:{}
+};
+let S;
+try{S=JSON.parse(localStorage.getItem('kingshot-planner-v2'))||null}catch(e){S=null}
+S=Object.assign({},clone(DEFAULT_STATE),S||{});
+for(const k of Object.keys(DEFAULT_STATE)) if(typeof DEFAULT_STATE[k]==='object'&&!Array.isArray(DEFAULT_STATE[k])) S[k]=Object.assign({},clone(DEFAULT_STATE[k]),S[k]||{});
+function save(){localStorage.setItem('kingshot-planner-v2',JSON.stringify(S))}
+function resetAll(){if(confirm('Clear all your saved levels, inventory and entries?')){localStorage.removeItem('kingshot-planner-v2');location.reload()}}
+function saveProfile(){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(S,null,1)],{type:'application/json'}));
+  a.download='kingshot-profile.json'; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+}
+function renderAll(){renderNav();renderInventory();renderBuildings();renderGovGear();renderCharms();renderHeroGear();renderHeroes();renderMasters();renderOpps();renderReference();renderTab()}
+/* ============ nav ============ */
+const TABS=[['inventory','📦 Inventory'],['buildings','🏰 Buildings'],['govgear','👑 Gov Gear'],['charms','💠 Charms'],['herogear','🛡️ Hero Gear'],['heroes','🦸 Heroes'],['masters','🎓 Masters'],['opps','🎯 Opportunities'],['reference','📖 Reference']];
+function renderNav(){
+  $('#nav').innerHTML=TABS.map(([id,l])=>`<button data-tab="${id}" class="${S.tab===id?'active':''}">${l}</button>`).join('');
+  $$('#nav button').forEach(b=>b.onclick=()=>{S.tab=b.dataset.tab;save();renderNav();if(b.dataset.tab==='opps')renderOpps();renderTab()});
+}
+function renderTab(){
+  $$('#main section.tab').forEach(s=>s.classList.toggle('active',s.id==='tab-'+S.tab));
+}
+/* ============ inventory ============ */
+const INV_FIELDS=[
+  ['Resources & Truegold',[['bread','Bread'],['wood','Wood'],['stone','Stone'],['iron','Iron'],['tg','Truegold'],['tt','Tempered Truegold'],['spd','Construction speedups (minutes)']]],
+  ['Governor Gear & Charms',[['sat','Satin'],['gt','Gilded Threads'],['av',"Artisan's Vision"],['cg','Charm Guides'],['cd','Charm Designs']]],
+  ['Hero Gear',[['xp','Enhancement XP (total)'],['fh','Forgehammers'],['mi','Mithril'],['mg','Mythic Gear (pieces)'],['wd','Widgets']]],
+  ['Heroes',[['hxp','Hero XP'],['shR','General Rare Shards'],['shE','General Epic Shards'],['shM','General Mythic Shards']]],
+  ['Masters',[['emb','Master Emblems'],['ms',"Master's Manuscripts"]]]
+];
+function renderInventory(){
+  const el=$('#tab-inventory');
+  el.innerHTML=`<div class="card"><h2>Your inventory</h2>
+    <p class="hint">Enter what you currently own. Every tab then shows what you still need to acquire (needed − owned), and the Opportunities tab uses these numbers to spot upgrades you can already afford. Keep this current or the recommendations will lie to you.</p>
+    ${INV_FIELDS.map(([grp,fields])=>`<h3>${grp}</h3><div class="inv-grid">${fields.map(([k,l])=>`<div class="inv-item"><label>${l}</label><input type="number" min="0" data-inv="${k}" value="${S.inv[k]||0}"></div>`).join('')}</div>`).join('')}
+    <p class="hint" style="margin-top:10px">Enhancement XP tip: total XP = Green parts ×10 + Purple parts ×100. Hero-specific shards are entered per hero on the Heroes tab; the general pools here cover the rest.</p>
+  </div>`;
+  $$('input[data-inv]').forEach(inp=>inp.onchange=e=>{S.inv[inp.dataset.inv]=Math.max(0,+e.target.value||0);save();renderAll()});
+}
+/* ============ buildings ============ */
+const BLD_NAMES=Object.keys(DATA.buildings);
+function bLabel(bld,l){return bld==='Town Center'?('TC '+l):l}
+function bIdx(bld,label){return DATA.buildings[bld].findIndex(r=>r.l===String(label))}
+function bCur(bld){const v=S.bld.cur[bld];return v!==undefined?+v:(bld==='Town Center'?0:-1)}
+function bTgt(bld){const v=S.bld.tgt[bld];return v!==undefined?+v:bCur(bld)}
+function bldOptions(bld,inclNone){
+  const rows=DATA.buildings[bld];
+  let o=inclNone?`<option value="-1">Not built</option>`:'';
+  return o+rows.map((r,i)=>`<option value="${i}">${bLabel(bld,r.l)}</option>`).join('');
+}
+function bldRange(bld,ci,ti){
+  const rows=DATA.buildings[bld];
+  const t={b:0,w:0,s:0,i:0,tg:0,tt:0,t:0,rows:[]};
+  for(let i=Math.max(ci,-1)+1;i<=ti;i++){const r=rows[i];t.b+=r.b;t.w+=r.w;t.s+=r.s;t.i+=r.i;t.tg+=r.tg;t.tt+=r.tt;t.t+=r.t;t.rows.push(r)}
+  return t;
+}
+function buffedTime(sec){
+  const cs=Math.max(0,+(S.buffs.cs||0));
+  let t=sec/(1+cs/100);
+  if(S.buffs.dt)t*=0.8;
+  return t;
+}
+function reqTree(goal,goalIdx){
+  const req={}; req[goal]=goalIdx;
+  let guard=0,changed=true;
+  while(changed&&guard++<25){
+    changed=false;
+    for(const [b,idx] of Object.entries(req)){
+      const rows=DATA.buildings[b];
+      const from=Math.min(bCur(b),idx);
+      for(let i=from+1;i<=idx;i++){
+        for(const [pb,pl] of rows[i].p){
+          if(!DATA.buildings[pb])continue;
+          const pi=bIdx(pb,pl); if(pi<0)continue;
+          if(req[pb]===undefined||pi>req[pb]){req[pb]=pi;changed=true}
+        }
+      }
+    }
+  }
+  return req;
+}
+function renderGlobalPlan(res){
+  const tcRows=DATA.buildings['Town Center'];
+  const tcCi=Math.min(bCur('Town Center'),tcRows.length-1);
+  const tcTi=Math.min(Math.max(bTgt('Town Center'),tcCi),tcRows.length-1);
+  if(tcTi<=tcCi){res.innerHTML='<p class="hint">Global plan: select the Town Center chip and raise the TC target — every building will be planned to that level.</p>';return}
+  const tcLabel=tcRows[tcTi].l;
+  let grand={b:0,w:0,s:0,i:0,tg:0,tt:0,t:0},rowsHtml='';
+  for(const n of BLD_NAMES){
+    const rows=DATA.buildings[n];
+    let gi=bIdx(n,tcLabel);
+    if(gi<0)gi=rows.length-1; // Academy caps at 30
+    const c=Math.min(bCur(n),rows.length-1);
+    const t=bldRange(n,Math.min(c,gi),gi);
+    grand.b+=t.b;grand.w+=t.w;grand.s+=t.s;grand.i+=t.i;grand.tg+=t.tg;grand.tt+=t.tt;grand.t+=t.t;
+    const done=c>=gi;
+    rowsHtml+=`<tr><td>${n}${gi===rows.length-1&&bIdx(n,tcLabel)<0?' (caps at 30)':''}</td><td>${c<0?'Not built':bLabel(n,rows[c].l)}</td><td>${bLabel(n,rows[gi].l)}</td><td class="res-b num">${done?'—':fmtShort(t.b)}</td><td class="res-w num">${done?'—':fmtShort(t.w)}</td><td class="res-s num">${done?'—':fmtShort(t.s)}</td><td class="res-i num">${done?'—':fmtShort(t.i)}</td><td class="res-tg num">${done||!t.tg?'':fmt(t.tg)}</td><td class="res-tt num">${done||!t.tt?'':fmt(t.tt)}</td><td class="num">${done?'✓':fmtTime(buffedTime(t.t))}</td></tr>`;
+  }
+  const adjT=buffedTime(grand.t);
+  const spdOwn=invOf('spd'), spdNeed=Math.ceil(adjT/60);
+  res.innerHTML=`
+  <h3>Global plan — every building to ${bLabel('Town Center',tcLabel)}</h3>
+  <p class="hint">Uses each building's current level (set via its chip above). Prerequisites are automatically satisfied because everything reaches the same level. Times shown are buffed (+${S.buffs.cs||0}%${S.buffs.dt?' & Double Time':''}).</p>
+  <div class="tbl-wrap"><table><thead><tr><th>Building</th><th>Current</th><th>Target</th><th>Bread</th><th>Wood</th><th>Stone</th><th>Iron</th><th>TG</th><th>Tempered</th><th>Buffed time</th></tr></thead><tbody>${rowsHtml}</tbody></table></div>
+  <div class="totals">
+    ${needCard('Bread',grand.b,'bread','res-b')}
+    ${needCard('Wood',grand.w,'wood','res-w')}
+    ${needCard('Stone',grand.s,'stone','res-s')}
+    ${needCard('Iron',grand.i,'iron','res-i')}
+    ${needCard('Truegold',grand.tg,'tg','res-tg')}
+    ${needCard('Tempered TG',grand.tt,'tt','res-tt')}
+    <div class="total-card"><div class="tc-label">Build time (buffed)</div><div class="tc-value num">${fmtTime(adjT)}</div><div class="tc-exact">base ${fmtTime(grand.t)}</div>${spdNeed?`<div class="tc-net ${spdOwn>=spdNeed?'net-ok':'net-short'}">${spdOwn>=spdNeed?`speedups cover it ✓`:`need ${fmt(spdNeed)} min · own ${fmt(spdOwn)}`}</div>`:''}</div>
+    ${ptsCard('SG / KvK pts',grand.tg*EV.tg+grand.tt*EV.ttg+Math.round(adjT/60)*EV.spmin,'TG ×2,000 + Tempered ×30,000 + 30/buffed min')}
+  </div>
+  <div class="dayrec">📅 Scores on: ${DAYS.build.days}. ${DAYS.build.rec}</div>`;
+}
+function renderBuildings(){
+  const el=$('#tab-buildings');
+  const bld=S.bld.sel, rows=DATA.buildings[bld];
+  const maxI=rows.length-1;
+  let ci=Math.min(bCur(bld),maxI);
+  let ti=Math.min(Math.max(bTgt(bld),ci),maxI);
+  el.innerHTML=`<div class="card">
+    <h2>Building upgrades</h2>
+    <div class="chips">${BLD_NAMES.map(n=>`<button class="chip ${n===bld?'active':''}" data-bld="${n}">${n}</button>`).join('')}</div>
+    <div class="controls">
+      <div class="field"><label>Current level</label><select id="bld-cur">${bldOptions(bld,bld!=='Town Center')}</select></div>
+      <div class="field"><label>Target level</label><select id="bld-tgt">${bldOptions(bld,bld!=='Town Center')}</select></div>
+      <div class="field"><label>Construction speed % <span class="info" title="Find it in game: tap your Power score (top-left, next to your avatar) → Bonus Overview → scroll to the Growth section → Construction Speed. That number already includes research, hero (Saul), pet (Gray Wolf), Chief Minister (+10%), Ground Works decree (+10%) and KvK bonus (+5%) if active — but NOT the Double Time decree (separate toggle here). Formula: build time = base ÷ (1 + speed%).">ⓘ where?</span></label><input type="number" id="buff-cs" min="0" max="400" value="${S.buffs.cs||0}"></div>
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);padding-bottom:8px"><input type="checkbox" id="buff-dt" ${S.buffs.dt?'checked':''}> Double Time decree active (−20% time) <span class="info" title="Double Time is a King/decree buff that multiplies the remaining build time by 0.8. It is NOT included in the Bonus Overview construction speed number, so it has its own toggle.">ⓘ</span></label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--gold2);padding-bottom:8px"><input type="checkbox" id="bld-global" ${S.bld.global?'checked':''}> <b>Global plan</b> — every building to the TC target <span class="info" title="Set your Town Center current + target, and each building's current level (click its chip). This mode shows what EVERY building needs to reach the same level as your TC target.">ⓘ</span></label>
+    </div>
+    <p class="hint">${bld==='Academy'?'Academy caps at level 30 — no True Gold levels.':'Levels 30-1 … 30-4 are the Truegold sub-steps between level 30 and TG1; each TG tier then has 4 sub-steps before the next. Costs are base values.'} Set the other buildings' current levels by selecting each building chip — the requirement tree below uses them.</p>
+    <div id="bld-results"></div>
+  </div>`;
+  $('#bld-cur').value=ci; $('#bld-tgt').value=ti;
+  $$('#tab-buildings .chip').forEach(c=>c.onclick=()=>{S.bld.sel=c.dataset.bld;save();renderBuildings()});
+  $('#bld-cur').onchange=e=>{S.bld.cur[bld]=+e.target.value;if(bTgt(bld)<+e.target.value)S.bld.tgt[bld]=+e.target.value;save();renderBuildings()};
+  $('#bld-tgt').onchange=e=>{S.bld.tgt[bld]=+e.target.value;save();renderBuildings()};
+  $('#buff-cs').onchange=e=>{S.buffs.cs=Math.max(0,+e.target.value||0);save();renderBuildings()};
+  $('#buff-dt').onchange=e=>{S.buffs.dt=e.target.checked;save();renderBuildings()};
+  $('#bld-global').onchange=e=>{S.bld.global=e.target.checked;save();renderBuildings()};
+  const res=$('#bld-results');
+  if(S.bld.global){renderGlobalPlan(res);return}
+  if(ti<=ci){res.innerHTML='<p class="hint">Raise the target level to see the full requirement tree and costs.</p>';return}
+  // requirement tree (transitive, incl. TC sublevels and prereq buildings)
+  const req=reqTree(bld,ti);
+  let grand={b:0,w:0,s:0,i:0,tg:0,tt:0,t:0};
+  let treeRows='';let warnTC='';
+  const names=Object.keys(req).sort((a,b)=>a===bld?-1:b===bld?1:a.localeCompare(b));
+  for(const n of names){
+    const rIdx=req[n], c=bCur(n);
+    const t=bldRange(n,Math.min(c,rIdx),rIdx);
+    grand.b+=t.b;grand.w+=t.w;grand.s+=t.s;grand.i+=t.i;grand.tg+=t.tg;grand.tt+=t.tt;grand.t+=t.t;
+    const done=c>=rIdx;
+    treeRows+=`<tr><td>${n}${n===bld?' (goal)':''}</td><td>${c<0?'Not built':bLabel(n,DATA.buildings[n][c].l)}</td><td>${bLabel(n,DATA.buildings[n][rIdx].l)}</td><td class="res-b num">${done?'—':fmtShort(t.b)}</td><td class="res-w num">${done?'—':fmtShort(t.w)}</td><td class="res-s num">${done?'—':fmtShort(t.s)}</td><td class="res-i num">${done?'—':fmtShort(t.i)}</td><td class="res-tg num">${done||!t.tg?'':fmt(t.tg)}</td><td class="res-tt num">${done||!t.tt?'':fmt(t.tt)}</td><td class="num">${done?'✓':fmtTime(t.t)}</td></tr>`;
+    if(n==='Town Center'&&bld!=='Town Center'){
+      const tcTgt=bTgt('Town Center');
+      if(tcTgt<rIdx)warnTC=`<div class="warn">⚠ This upgrade requires Town Center ${bLabel('Town Center',DATA.buildings['Town Center'][rIdx].l)}, but your saved TC target is ${bLabel('Town Center',DATA.buildings['Town Center'][tcTgt<0?0:tcTgt].l)}. In game you cannot out-level your TC — the totals below already include raising TC to the required level.</div>`;
+    }
+  }
+  const adjT=buffedTime(grand.t);
+  const spdOwn=invOf('spd'), spdNeed=Math.ceil(adjT/60);
+  res.innerHTML=`
+  ${warnTC}
+  <h3>Full requirement tree for ${bld} ${bLabel(bld,rows[ti].l)}</h3>
+  <p class="hint">Everything that must be upgraded, in full — prerequisite buildings, their prerequisites, and all TC sub-levels — based on the current levels you've set per building.</p>
+  <div class="tbl-wrap"><table><thead><tr><th>Building</th><th>Current</th><th>Required</th><th>Bread</th><th>Wood</th><th>Stone</th><th>Iron</th><th>TG</th><th>Tempered</th><th>Base time</th></tr></thead><tbody>${treeRows}</tbody></table></div>
+  <div class="totals">
+    ${needCard('Bread',grand.b,'bread','res-b')}
+    ${needCard('Wood',grand.w,'wood','res-w')}
+    ${needCard('Stone',grand.s,'stone','res-s')}
+    ${needCard('Iron',grand.i,'iron','res-i')}
+    ${needCard('Truegold',grand.tg,'tg','res-tg')}
+    ${needCard('Tempered TG',grand.tt,'tt','res-tt')}
+    <div class="total-card"><div class="tc-label">Build time (buffed)</div><div class="tc-value num">${fmtTime(adjT)}</div><div class="tc-exact">base ${fmtTime(grand.t)} · at +${S.buffs.cs||0}%${S.buffs.dt?' & Double Time':''}</div>${spdNeed?`<div class="tc-net ${spdOwn>=spdNeed?'net-ok':'net-short'}">${spdOwn>=spdNeed?`speedups cover it ✓`:`need ${fmt(spdNeed)} min · own ${fmt(spdOwn)}`}</div>`:''}</div>
+    ${ptsCard('SG / KvK pts',grand.tg*EV.tg+grand.tt*EV.ttg+Math.round(adjT/60)*EV.spmin,'TG ×2,000 + Tempered ×30,000 + 30/buffed min')}
+  </div>
+  <div class="dayrec">📅 Scores on: ${DAYS.build.days}. ${DAYS.build.rec}</div>
+  <h3>Step-by-step (${bld} only, ${bLabel(bld,rows[ci<0?0:ci].l)} → ${bLabel(bld,rows[ti].l)})</h3>
+  <div class="tbl-wrap"><table><thead><tr><th>Level</th><th>Bread</th><th>Wood</th><th>Stone</th><th>Iron</th><th>TG</th><th>Tempered</th><th>Base time</th><th>Buffed</th><th>SG/KvK pts</th><th>Requires</th></tr></thead><tbody>
+  ${bldRange(bld,ci,ti).rows.map(r=>{
+    const rp=r.tg*EV.tg+r.tt*EV.ttg+Math.round(buffedTime(r.t)/60)*EV.spmin;
+    return `<tr><td>${bLabel(bld,r.l)}${badge(r.c,r.n)}</td><td class="res-b num">${fmtShort(r.b)}</td><td class="res-w num">${fmtShort(r.w)}</td><td class="res-s num">${fmtShort(r.s)}</td><td class="res-i num">${fmtShort(r.i)}</td><td class="res-tg num">${r.tg||''}</td><td class="res-tt num">${r.tt||''}</td><td class="num">${fmtTime(r.t)}</td><td class="num">${fmtTime(buffedTime(r.t))}</td><td class="pts num">${fmtShort(rp)}</td><td class="prereq">${r.p.map(p=>p[0]+' '+p[1]).join(', ')}</td></tr>`;
+  }).join('')}
+  </tbody></table></div>`;
+}
+/* ============ governor gear ============ */
+const GG_PIECES=[['Cloak','Infantry','inf'],['Breeches','Infantry','inf'],['Ring','Archer','arc'],['Staff','Archer','arc'],['Hood','Cavalry','cav'],['Necklace','Cavalry','cav']];
+function ggOptions(){return `<option value="-1">Not forged</option>`+DATA.govGear.map((g,i)=>`<option value="${i}">${g.s}</option>`).join('')}
+function ggRange(ci,ti){const t={sat:0,gt:0,av:0};for(let i=ci+1;i<=ti;i++){t.sat+=DATA.govGear[i].sat;t.gt+=DATA.govGear[i].gt;t.av+=DATA.govGear[i].av}return t}
+function ggCur(n){return S.gg.cur[n]!==undefined?+S.gg.cur[n]:-1}
+function ggTgt(n){return S.gg.tgt[n]!==undefined?+S.gg.tgt[n]:ggCur(n)}
+function setBonus(idxArr){
+  // 3pc = set bonus of 3rd-highest piece step; 6pc = lowest piece step (higher tiers count toward lower sets)
+  const sbs=idxArr.map(i=>i<0?null:DATA.govGear[i].sb).map(v=>v==null?-1:v).sort((a,b)=>b-a);
+  const p3=sbs[2]>=0?sbs[2]:0, p6=sbs[5]>=0?sbs[5]:0;
+  return {p3,p6};
+}
+function renderGovGear(){
+  const el=$('#tab-govgear');
+  const maxI=DATA.govGear.length-1;
+  let pieces='',tot={sat:0,gt:0,av:0,pts:0,unk:0};
+  const curIdx=[],tgtIdx=[];
+  for(const [name,cls,cc] of GG_PIECES){
+    const ci=ggCur(name), ti=Math.max(ggTgt(name),ci);
+    curIdx.push(ci);tgtIdx.push(ti);
+    const t=ggRange(ci,ti), p=ggPts(ci,ti);
+    tot.sat+=t.sat;tot.gt+=t.gt;tot.av+=t.av;tot.pts+=p.pts;tot.unk+=p.unk;
+    pieces+=`<div class="piece ${cc}"><h4>${name} <span class="cls">${cls}</span></h4>
+      <div class="row"><label>Current</label><select data-gg-cur="${name}">${ggOptions()}</select></div>
+      <div class="row"><label>Target</label><select data-gg-tgt="${name}">${ggOptions()}</select></div>
+      <div class="cost">${ti<=ci?'— no increase set':`${fmtShort(t.sat)} Satin · ${fmt(t.gt)} Threads · ${fmt(t.av)} Vision`}</div></div>`;
+  }
+  const sbC=setBonus(curIdx), sbT=setBonus(tgtIdx);
+  el.innerHTML=`<div class="card"><h2>Governor Gear (unlocks at TC 22)</h2>
+    <p class="hint">Ladder: Green → Blue → Purple → Purple T1 → Gold → Gold T1–T3 → Red → Red T1–T6, star sub-levels each. Cap: <b>Red T6 3-star</b>. Materials: <b>Satin</b>, <b>Gilded Threads</b>, <b>Artisan's Vision</b>.</p>
+    <div class="controls">
+      <div class="field"><label>Set all current</label><select id="gg-all-cur"><option value="">—</option>${DATA.govGear.map((g,i)=>`<option value="${i}">${g.s}</option>`).join('')}</select></div>
+      <div class="field"><label>Set all targets</label><select id="gg-all-tgt"><option value="">—</option>${DATA.govGear.map((g,i)=>`<option value="${i}">${g.s}</option>`).join('')}</select></div>
+    </div>
+    <div class="piece-grid">${pieces}</div>
+    <div class="totals">
+      ${needCard('Satin',tot.sat,'sat','res-tg')}
+      ${needCard('Gilded Threads',tot.gt,'gt')}
+      ${needCard("Artisan's Vision",tot.av,'av')}
+      ${ptsCard('SG / KvK pts',tot.pts,tot.unk?`+ ${tot.unk} step${tot.unk>1?'s':''} with unpublished scores`:'gear level-up score × 36')}
+    </div>
+    <h3>Set bonuses — current vs target</h3>
+    <div class="totals">
+      ${totalCard('3-Piece Defense',`${sbC.p3}% → ${sbT.p3}%`,'3 pieces at same tier or higher','res-tg')}
+      ${totalCard('6-Piece Attack',`${sbC.p6}% → ${sbT.p6}%`,'all 6 pieces at same tier or higher','res-tt')}
+    </div>
+    <p class="hint">Set bonus is driven by your weakest qualifying pieces: 3-piece uses your 3rd-strongest piece's tier, 6-piece your weakest. Star levels within a tier don't break the set.</p>
+    <div class="dayrec">📅 Scores on: ${DAYS.gear.days}. ${DAYS.gear.rec}</div>
+    <p class="hint">Level-up scores are published only through Gold 3★ — Gold T1+ and Red steps count as unpublished, so points totals are a floor. ✓ Red T3/T4 costs verified July 2026 (kingshotoptimizer + kingshot.net).</p>
+  </div>`;
+  $('#gg-all-cur').onchange=e=>{if(e.target.value==='')return;for(const [n] of GG_PIECES)S.gg.cur[n]=+e.target.value;save();renderGovGear()};
+  $('#gg-all-tgt').onchange=e=>{if(e.target.value==='')return;for(const [n] of GG_PIECES)S.gg.tgt[n]=+e.target.value;save();renderGovGear()};
+  for(const [name] of GG_PIECES){
+    const cs=$(`select[data-gg-cur="${name}"]`),ts=$(`select[data-gg-tgt="${name}"]`);
+    cs.value=ggCur(name); ts.value=ggTgt(name);
+    cs.onchange=e=>{S.gg.cur[name]=+e.target.value;if(ggTgt(name)<+e.target.value)S.gg.tgt[name]=+e.target.value;save();renderGovGear()};
+    ts.onchange=e=>{S.gg.tgt[name]=+e.target.value;save();renderGovGear()};
+  }
+}
+/* ============ charms ============ */
+function charmRange(cl,tl){let g=0,d=0;for(const c of DATA.charms){if(c.l>cl&&c.l<=tl){g+=c.g;d+=c.d}}return{g,d}}
+function chCur(k){return S.charm.cur[k]!==undefined?+S.charm.cur[k]:0}
+function chTgt(k){return S.charm.tgt[k]!==undefined?+S.charm.tgt[k]:chCur(k)}
+function charmLvOpts(withDash){return (withDash?`<option value="">—</option>`:'')+Array.from({length:23},(_,i)=>`<option value="${i}">${i===0?'—':'Lv '+i}</option>`).join('')}
+function renderCharms(){
+  const el=$('#tab-charms');
+  let grid='',tg=0,td=0,cpts=0,cunk=0;
+  for(const [name,cls,cc] of GG_PIECES){
+    let slots='';
+    for(let s=1;s<=3;s++){
+      const key=name+'-'+s;
+      const cur=chCur(key), tgt=Math.max(chTgt(key),cur);
+      const r=charmRange(cur,tgt);tg+=r.g;td+=r.d;
+      const cp=charmPts(cur,tgt);cpts+=cp.pts;cunk+=cp.unk;
+      slots+=`<div class="row"><label>Slot ${s}</label><select data-ch-cur="${key}">${charmLvOpts()}</select><span style="color:var(--dim)">→</span><select data-ch-tgt="${key}">${charmLvOpts()}</select><span style="font-size:11px;color:var(--muted)" class="num">${tgt<=cur?'—':fmt(r.g)+'G / '+fmt(r.d)+'D'}</span></div>`;
+    }
+    grid+=`<div class="piece ${cc}"><h4>${name} <span class="cls">${cls}</span></h4>${slots}</div>`;
+  }
+  el.innerHTML=`<div class="card"><h2>Governor Charms (unlocks at TC 25)</h2>
+    <p class="hint">6 gear pieces × 3 charm slots = 18 charms, levels 1–22. Each slot has its own current → target. Materials: <b>Charm Guides</b> and <b>Charm Designs</b>.</p>
+    <div class="controls">
+      <div class="field"><label>Set all current</label><select id="ch-all-cur"><option value="">—</option>${Array.from({length:23},(_,i)=>`<option value="${i}">${i===0?'0':'Lv '+i}</option>`).join('')}</select></div>
+      <div class="field"><label>Set all targets</label><select id="ch-all-tgt"><option value="">—</option>${Array.from({length:22},(_,i)=>`<option value="${i+1}">Lv ${i+1}</option>`).join('')}</select></div>
+    </div>
+    <div class="piece-grid">${grid}</div>
+    <div class="totals">
+      ${needCard('Charm Guides',tg,'cg','res-tg')}
+      ${needCard('Charm Designs',td,'cd','res-i')}
+      ${ptsCard('SG / KvK pts',cpts,cunk?`+ ${cunk} level-up${cunk>1?'s':''} with unpublished scores`:'charm level-up score × 70')}
+    </div>
+    <div class="dayrec">📅 Scores on: ${DAYS.charm.days}. ${DAYS.charm.rec}</div>
+    <p class="hint">Maxing one charm 0→22: 10,880 Guides + 19,200 Designs. Charm scores are published through level 11 only — points past that are a floor.</p>
+  </div>`;
+  $('#ch-all-cur').onchange=e=>{if(e.target.value==='')return;for(const [n] of GG_PIECES)for(let s=1;s<=3;s++)S.charm.cur[n+'-'+s]=+e.target.value;save();renderCharms()};
+  $('#ch-all-tgt').onchange=e=>{if(e.target.value==='')return;for(const [n] of GG_PIECES)for(let s=1;s<=3;s++)S.charm.tgt[n+'-'+s]=+e.target.value;save();renderCharms()};
+  $$('select[data-ch-cur]').forEach(sel=>{
+    sel.value=chCur(sel.dataset.chCur);
+    sel.onchange=e=>{const k=sel.dataset.chCur;S.charm.cur[k]=+e.target.value;if(chTgt(k)<+e.target.value)S.charm.tgt[k]=+e.target.value;save();renderCharms()};
+  });
+  $$('select[data-ch-tgt]').forEach(sel=>{
+    sel.value=chTgt(sel.dataset.chTgt);
+    sel.onchange=e=>{S.charm.tgt[sel.dataset.chTgt]=+e.target.value;save();renderCharms()};
+  });
+}
+/* ============ hero gear ============ */
+const HG_PIECES=[];
+for(const [cls,cc] of [['Infantry','inf'],['Cavalry','cav'],['Archery','arc']])
+  for(const slot of ['Helm','Chest','Gloves','Boots'])
+    HG_PIECES.push([cls+' '+slot,cls,cc,slot]);
+const HG_GATES={101:10,120:11,140:12,160:13,180:14,200:15};
+function hgRange(cl,tl){const t={xp:0,mi:0,mg:0};for(const r of DATA.heroGear){if(r.l>cl&&r.l<=tl){t.xp+=r.xp;t.mi+=r.mi;t.mg+=r.mg}}return t}
+function masteryRange(cl,tl){const t={fh:0,mg:0};for(const r of DATA.mastery){if(r.l>cl&&r.l<=tl){t.fh+=r.fh;t.mg+=r.mg}}return t}
+function hgV(map,n,def){const v=S.hg[map][n];return v!==undefined?Math.max(0,+v):def}
+function renderHeroGear(){
+  const el=$('#tab-herogear');
+  let grid='',tot={xp:0,mi:0,mg:0,fh:0},warnP=[];
+  for(const [name,cls,cc,slot] of HG_PIECES){
+    const cur=Math.min(hgV('cur',name,0),200), tgt=Math.min(Math.max(hgV('tgt',name,cur),cur),200);
+    const mcur=Math.min(hgV('mcur',name,0),20), mtgt=Math.min(Math.max(hgV('mtgt',name,mcur),mcur),20);
+    const t=hgRange(cur,tgt), m=masteryRange(mcur,mtgt);
+    tot.xp+=t.xp;tot.mi+=t.mi;tot.mg+=t.mg+m.mg;tot.fh+=m.fh;
+    for(const [gl,gm] of Object.entries(HG_GATES))if(tgt>=+gl&&mtgt<gm)warnP.push(`${name}: level ${gl} needs Mastery ${gm} (target M${mtgt})`);
+    grid+=`<div class="piece ${cc}"><h4>${name} <span class="cls">${slot==='Helm'||slot==='Boots'?'Lethality':'Health'}</span></h4>
+      <div class="row"><label>Level</label><input type="number" min="0" max="200" data-hg-cur="${name}" value="${cur}"><span style="color:var(--dim)">→</span><input type="number" min="0" max="200" data-hg-tgt="${name}" value="${tgt}"></div>
+      <div class="row"><label>Mastery</label><input type="number" min="0" max="20" data-hg-mcur="${name}" value="${mcur}"><span style="color:var(--dim)">→</span><input type="number" min="0" max="20" data-hg-mtgt="${name}" value="${mtgt}"></div>
+      <div class="cost">${tgt<=cur&&mtgt<=mcur?'— no increase set':`${fmtShort(t.xp)} XP${t.mi?` · ${t.mi} Mithril`:''}${(t.mg+m.mg)?` · ${t.mg+m.mg} Mythic`:''}${m.fh?` · ${fmt(m.fh)} FH`:''}`}</div></div>`;
+  }
+  el.innerHTML=`<div class="card"><h2>Hero Gear (unlocks at TC 15)</h2>
+    <p class="hint">12 shared pieces: 3 classes × 4 slots. Enhance to 100 (Gold cap), imbue to Red, continue to 200. Each piece has its own current → target for level and Mastery Forging. Defaults are 0 with no increase — set targets per piece or use the bulk fields.</p>
+    <div class="controls">
+      <div class="field"><label>Set all current L</label><input type="number" id="hg-all-cur" min="0" max="200" placeholder="—"></div>
+      <div class="field"><label>Set all target L</label><input type="number" id="hg-all-tgt" min="0" max="200" placeholder="—"></div>
+      <div class="field"><label>Set all current M</label><input type="number" id="hg-all-mcur" min="0" max="20" placeholder="—"></div>
+      <div class="field"><label>Set all target M</label><input type="number" id="hg-all-mtgt" min="0" max="20" placeholder="—"></div>
+    </div>
+    ${warnP.length?`<div class="warn">⚠ Mastery gates block these targets in game (L101→M10, L120→M11, L140→M12, L160→M13, L180→M14, L200→M15):<br>${warnP.slice(0,6).join('<br>')}${warnP.length>6?`<br>…and ${warnP.length-6} more`:''}</div>`:''}
+    <div class="piece-grid">${grid}</div>
+    <div class="totals">
+      ${needCard('Enhancement XP',tot.xp,'xp','res-tg')}
+      ${needCard('Mythic Gear',tot.mg,'mg','res-tt')}
+      ${needCard('Mithril',tot.mi,'mi')}
+      ${needCard('Forgehammers',tot.fh,'fh','res-i')}
+      ${ptsCard('SG / KvK pts',tot.fh*EV.forgehammer+tot.mi*EV.mithril,'Forgehammer ×4,000 + Mithril ×40,000')}
+    </div>
+    <div class="dayrec">📅 Scores on: ${DAYS.hgear.days}. ${DAYS.hgear.rec}</div>
+    <p class="hint">Enhancement XP and Mythic Gear pieces score no event points. Full 0→200 per piece: 574,370 XP · 150 Mithril · 35 Mythic Gear; Mastery 0→20: 2,100 Forgehammers + 55 Mythic Gear. ✓ L121–139 XP verified vs kingshotoptimizer.</p>
+  </div>`;
+  const bulk=(id,map)=>{$(id).onchange=e=>{if(e.target.value==='')return;for(const [n] of HG_PIECES)S.hg[map][n]=Math.max(0,+e.target.value);save();renderHeroGear()}};
+  bulk('#hg-all-cur','cur');bulk('#hg-all-tgt','tgt');bulk('#hg-all-mcur','mcur');bulk('#hg-all-mtgt','mtgt');
+  const wire=(attr,map)=>$$(`input[data-${attr}]`).forEach(inp=>{
+    const key=attr.replace(/-([a-z])/g,(m,c)=>c.toUpperCase());
+    inp.onchange=e=>{S.hg[map][inp.dataset[key]]=Math.max(0,+e.target.value||0);save();renderHeroGear()};
+  });
+  wire('hg-cur','cur');wire('hg-tgt','tgt');wire('hg-mcur','mcur');wire('hg-mtgt','mtgt');
+}
+/* ============ heroes ============ */
+function heroXpRange(cl,tl){let x=0;for(const r of DATA.heroXP)if(r.l>cl&&r.l<=tl)x+=r.xp;return x}
+function ascRange(ci,ti){let s=0;for(let i=ci+1;i<=ti;i++)s+=DATA.asc[i].sh;return s}
+function exclRange(cl,tl){let w=0;for(const r of DATA.excl)if(r.l>cl&&r.l<=tl)w+=r.w;return w}
+function ascOpts(){return `<option value="-1">Not recruited</option>`+DATA.asc.map((a,i)=>`<option value="${i}">${a.s}</option>`).join('')}
+function heroNeed(row){
+  const h=DATA.roster.find(x=>x.n===row.n);
+  const cur=Math.max(-1,+row.cur), tgt=Math.max(cur,+row.tgt);
+  let need=ascRange(cur,tgt);
+  if(h&&cur<0&&tgt>=0&&h.u!==10)need+=h.u-10; // Amadeus 20 / Chenko 40 unlock
+  const spec=Math.max(0,+row.spec||0);
+  const fromSpec=Math.min(spec,need);
+  const rem=need-fromSpec;
+  const genOK=h?!h.so:true;
+  return {h,need,fromSpec,gen:genOK?rem:0,noGen:genOK?0:rem};
+}
+function renderHeroes(){
+  const el=$('#tab-heroes');
+  const rows=S.hero.rows||[];
+  const genUsed={Rare:0,Epic:0,Mythic:0};
+  let totPts=0;
+  let tblRows=rows.map((row,i)=>{
+    const {h,need,fromSpec,gen,noGen}=heroNeed(row);
+    const rar=h?h.r:'Mythic';
+    genUsed[rar]=(genUsed[rar]||0)+gen;
+    totPts+=need*EV.shard[rar];
+    return `<tr><td>${row.n} <span style="color:var(--dim);font-size:11px">${rar} · Gen ${h?h.g:'?'} · ${h?h.cl:''}${h&&h.so?' · specific shards only':''}</span></td>
+      <td><select data-hr-cur="${i}">${ascOpts()}</select></td>
+      <td><select data-hr-tgt="${i}">${ascOpts()}</select></td>
+      <td><input type="number" min="0" data-hr-spec="${i}" value="${row.spec||0}" style="width:80px"></td>
+      <td class="num">${fmt(need)}</td>
+      <td class="num">${fmt(fromSpec)}</td>
+      <td class="num">${gen?fmt(gen):noGen?`<span class="net-short">${fmt(noGen)} specific short</span>`:'0'}</td>
+      <td class="pts num">${fmtShort(need*EV.shard[rar])}</td>
+      <td><button class="btn small" data-hr-del="${i}">✕</button></td></tr>`;
+  }).join('');
+  const genRows=['Rare','Epic','Mythic'].map(r=>{
+    const own=invOf('sh'+r[0]), used=genUsed[r]||0, short=Math.max(0,used-own);
+    return `<tr><td>General ${r} Shards</td><td class="num">${fmt(used)}</td><td class="num">${fmt(own)}</td><td class="num ${short?'net-short':'net-ok'}">${short?fmt(short)+' short':'✓ covered'}</td></tr>`;
+  }).join('');
+  const rosterOpts=DATA.roster.map(h=>`<option value="${h.n}">${h.n} (${h.r}, Gen ${h.g}${h.cl?', '+h.cl:''})</option>`).join('');
+  const hh=S.hero;
+  const xp=heroXpRange(Math.min(hh.lvCur,hh.lvTgt),hh.lvTgt)*Math.max(1,hh.lvN);
+  const wd=exclRange(Math.min(hh.exCur,hh.exTgt),hh.exTgt)*Math.max(1,hh.exN);
+  el.innerHTML=`
+  <div class="card"><h2>Hero Ascension planner</h2>
+    <p class="hint">Add each hero you're building. Enter their hero-specific shards owned; general shards come from your Inventory tab pools and are allocated per rarity below. Amadeus &amp; Helga can only use their own shards; Amadeus unlocks at 20 shards, Chenko at 40.</p>
+    <div class="controls">
+      <div class="field"><label>Add hero</label><select id="hr-add"><option value="">— pick a hero —</option>${rosterOpts}</select></div>
+      <div class="field"><label>Add group</label><select id="hr-add-group"><option value="">— add many —</option><option value="r:Mythic">All Mythic heroes</option><option value="r:Epic">All Epic heroes</option><option value="r:Rare">All Rare heroes</option>${[...new Set(DATA.roster.map(h=>h.g))].sort((a,b)=>a-b).map(g=>`<option value="g:${g}">All Gen ${g}</option>`).join('')}<option value="all">Everyone</option></select></div>
+      ${rows.length?`<div class="field"><label>Set all current</label><select id="hr-all-cur"><option value="">—</option>${ascOpts().replace('<option value="-1">Not recruited</option>','<option value="-1">Not recruited</option>')}</select></div>
+      <div class="field"><label>Set all targets</label><select id="hr-all-tgt"><option value="">—</option>${DATA.asc.map((a,i)=>`<option value="${i}">${a.s}</option>`).join('')}</select></div>
+      <button class="btn small" id="hr-clear" style="margin-bottom:2px">Remove all</button>`:''}
+    </div>
+    ${rows.length?`<div class="tbl-wrap"><table><thead><tr><th>Hero</th><th>Current</th><th>Target</th><th>Specific owned</th><th>Shards needed</th><th>From specific</th><th>From general</th><th>SG/KvK pts</th><th></th></tr></thead><tbody>${tblRows}</tbody></table></div>
+    <h3>General shard pools (from Inventory)</h3>
+    <table><thead><tr><th>Pool</th><th>Allocated</th><th>Owned</th><th>Status</th></tr></thead><tbody>${genRows}</tbody></table>
+    <div class="totals">${ptsCard('SG / KvK pts (all heroes)',totPts,'shards × rarity rate when used to ascend')}</div>`:'<p class="hint">No heroes added yet.</p>'}
+    <div class="dayrec">📅 Scores on: ${DAYS.hero.days}. ${DAYS.hero.rec}</div>
+  </div>
+  <div class="card"><h2>Hero Leveling</h2>
+    <div class="controls">
+      <div class="field"><label>Current level</label><input type="number" id="hx-cur" min="1" max="80" value="${hh.lvCur}"></div>
+      <div class="field"><label>Target level</label><input type="number" id="hx-tgt" min="1" max="80" value="${hh.lvTgt}"></div>
+      <div class="field"><label># heroes</label><input type="number" id="hx-n" min="1" max="50" value="${hh.lvN}"></div>
+    </div>
+    <div class="totals">${needCard('Hero XP needed',xp,'hxp','res-tg')}${ptsCard('SG / KvK pts',0,'Hero XP is not scored in any event')}</div>
+    <p class="hint">Max level 80 (gated by TC 25–26). Full 1→80 = 23,641,790 XP per hero.</p>
+  </div>
+  <div class="card"><h2>Exclusive Gear (Mythic heroes)</h2>
+    <div class="controls">
+      <div class="field"><label>Current level</label><input type="number" id="ex-cur" min="0" max="10" value="${hh.exCur}"></div>
+      <div class="field"><label>Target level</label><input type="number" id="ex-tgt" min="0" max="10" value="${hh.exTgt}"></div>
+      <div class="field"><label># heroes</label><input type="number" id="ex-n" min="1" max="50" value="${hh.exN}"></div>
+    </div>
+    <div class="totals">${needCard('Widgets needed',wd,'wd','res-i')}${ptsCard('SG / KvK pts',wd*EV.widget,'Widget × 8,000 — Officer Project pays 12,000')}</div>
+  </div>`;
+  $('#hr-add').onchange=e=>{
+    if(!e.target.value)return;
+    if(!(S.hero.rows||[]).some(r=>r.n===e.target.value)){
+      S.hero.rows=S.hero.rows||[];
+      S.hero.rows.push({n:e.target.value,cur:-1,tgt:-1,spec:0});
+      save();
+    }
+    renderHeroes();
+  };
+  $('#hr-add-group').onchange=e=>{
+    const v=e.target.value; if(!v)return;
+    S.hero.rows=S.hero.rows||[];
+    const match=h=>v==='all'||(v.startsWith('r:')&&h.r===v.slice(2))||(v.startsWith('g:')&&h.g===+v.slice(2));
+    for(const h of DATA.roster)if(match(h)&&!S.hero.rows.some(r=>r.n===h.n))S.hero.rows.push({n:h.n,cur:-1,tgt:-1,spec:0});
+    save();renderHeroes();
+  };
+  const allCur=$('#hr-all-cur'),allTgt=$('#hr-all-tgt'),clr=$('#hr-clear');
+  if(allCur)allCur.onchange=e=>{if(e.target.value==='')return;for(const r of S.hero.rows){r.cur=+e.target.value;if(+r.tgt<+r.cur)r.tgt=r.cur}save();renderHeroes()};
+  if(allTgt)allTgt.onchange=e=>{if(e.target.value==='')return;for(const r of S.hero.rows)r.tgt=Math.max(+e.target.value,+r.cur);save();renderHeroes()};
+  if(clr)clr.onclick=()=>{if(confirm('Remove all heroes from the plan?')){S.hero.rows=[];save();renderHeroes()}};
+  rows.forEach((row,i)=>{
+    const cs=$(`select[data-hr-cur="${i}"]`),ts=$(`select[data-hr-tgt="${i}"]`);
+    if(cs){cs.value=row.cur;cs.onchange=e=>{row.cur=+e.target.value;if(+row.tgt<+row.cur)row.tgt=row.cur;save();renderHeroes()}}
+    if(ts){ts.value=Math.max(+row.tgt,+row.cur);ts.onchange=e=>{row.tgt=+e.target.value;save();renderHeroes()}}
+    const sp=$(`input[data-hr-spec="${i}"]`);
+    if(sp)sp.onchange=e=>{row.spec=Math.max(0,+e.target.value||0);save();renderHeroes()};
+    const del=$(`button[data-hr-del="${i}"]`);
+    if(del)del.onclick=()=>{S.hero.rows.splice(i,1);save();renderHeroes()};
+  });
+  const bind=(id,key)=>{$(id).onchange=e=>{S.hero[key]=+e.target.value;save();renderHeroes()}};
+  bind('#hx-cur','lvCur');bind('#hx-tgt','lvTgt');bind('#hx-n','lvN');
+  bind('#ex-cur','exCur');bind('#ex-tgt','exTgt');bind('#ex-n','exN');
+}
+/* ============ masters ============ */
+function maState(m){return S.ma[m]||(S.ma[m]={relCur:0,relTgt:0,paid:false,skCur:{},skTgt:{}})}
+function renderMasters(){
+  const el=$('#tab-masters');
+  let totE=0,totM=0,totX=0,cards='';
+  for(const [mName,m] of Object.entries(DATA.masters)){
+    const st=maState(mName);
+    const relCur=Math.min(Math.max(+st.relCur||0,0),100);
+    const relTgt=Math.min(Math.max(+(st.relTgt??relCur),relCur),100);
+    let emb=0;
+    for(const b of m.br){
+      if(b.lv>relCur&&b.lv<=relTgt)emb+=b.e;
+      else if(b.lv===relCur&&!st.paid&&relTgt>relCur)emb+=b.e;
+    }
+    totE+=emb;
+    let skHtml='';
+    for(const [sName,sk] of Object.entries(m.sk)){
+      const cur=Math.min(Math.max(+((st.skCur||{})[sName]??1),1),sk.max);
+      const tgt=Math.min(Math.max(+((st.skTgt||{})[sName]??cur),cur),sk.max);
+      let ms=0,xp=0;
+      for(let L=cur+1;L<=tgt;L++){ms+=sk.ms[L-2];xp+=sk.xp[L-2]}
+      totM+=ms;totX+=xp;
+      const opts=mx=>Array.from({length:sk.max},(_,i)=>`<option value="${i+1}">Lv ${i+1}</option>`).join('');
+      skHtml+=`<div class="skill-row"><span class="sk-name">${sName} <span style="color:var(--dim);font-size:11px">(${sk.unlock==='available from start'?'from start':sk.unlock}, max ${sk.max})</span></span>
+        <select data-msk-cur="${mName}|${sName}">${opts()}</select><span style="color:var(--dim)">→</span>
+        <select data-msk-tgt="${mName}|${sName}">${opts()}</select>
+        <span class="sk-cost num">${tgt<=cur?'—':fmt(ms)+' ms · '+fmtShort(xp)+' XP'}</span></div>`;
+    }
+    cards+=`<div class="card master-card"><h3>${mName}</h3>
+      <div class="controls">
+        <div class="field"><label>Relationship current</label><input type="number" data-mrel-cur="${mName}" min="0" max="100" value="${relCur}"></div>
+        <div class="field"><label>Relationship target</label><input type="number" data-mrel-tgt="${mName}" min="0" max="100" value="${relTgt}"></div>
+        ${relCur>0&&relCur%10===0&&relCur<100?`<label style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);padding-bottom:8px"><input type="checkbox" data-mpaid="${mName}" ${st.paid?'checked':''}> Breakthrough at Lv ${relCur} already paid</label>`:''}
+      </div>
+      <div class="totals"><div class="total-card"><div class="tc-label">Master Emblems (Rel. ${relCur} → ${relTgt})</div><div class="tc-value res-tg num">${fmt(emb)}</div>${relTgt<=relCur?'<div class="tc-net net-short">target = current — raise the relationship target to see costs</div>':''}</div></div>
+      <h3 style="color:var(--text)">Skills — current → target</h3>${skHtml}
+    </div>`;
+  }
+  el.innerHTML=`<div class="card"><h2>Master Academy (unlocks at TC 25, Generation 3)</h2>
+    <p class="hint">Per master: relationship level current → target (emblems at every 10-level breakthrough) and each skill current → target (manuscripts + research time). Maxing all four costs 2,810 Emblems and 536,650 Manuscripts total.</p>
+    <div class="totals">
+      ${needCard('Master Emblems',totE,'emb','res-tg')}
+      ${needCard("Master's Manuscripts",totM,'ms','res-tt')}
+      ${totalCard('Skill research XP',fmtShort(totX),fmt(totX),'res-i')}
+      ${ptsCard('SG / KvK pts',totE*EV.emblem+totM*EV.manuscript,'Emblem × 6,000 + Manuscript × 60')}
+    </div>
+    <div class="dayrec">📅 Scores on: ${DAYS.master.days}. ${DAYS.master.rec}</div>
+    <p class="hint">Skill learning speedups also score 30 pts/min on speedup days. The Master Research tree (after Rel. 100) costs emblems too, but no source publishes per-node costs — budget extra. ✓ Pan (275) &amp; Cassia (1,820) emblem totals verified vs kingshot.net.</p>
+  </div>${cards}`;
+  $$('input[data-mrel-cur]').forEach(inp=>inp.onchange=e=>{const st=maState(inp.dataset.mrelCur);st.relCur=+e.target.value;if(+st.relTgt<+st.relCur)st.relTgt=st.relCur;st.paid=false;save();renderMasters()});
+  $$('input[data-mrel-tgt]').forEach(inp=>inp.onchange=e=>{maState(inp.dataset.mrelTgt).relTgt=+e.target.value;save();renderMasters()});
+  $$('input[data-mpaid]').forEach(inp=>inp.onchange=e=>{maState(inp.dataset.mpaid).paid=e.target.checked;save();renderMasters()});
+  $$('select[data-msk-cur]').forEach(sel=>{
+    const [mN,sN]=sel.dataset.mskCur.split('|'); const st=maState(mN);
+    sel.value=Math.min(Math.max(+((st.skCur||{})[sN]??1),1),DATA.masters[mN].sk[sN].max);
+    sel.onchange=e=>{st.skCur=st.skCur||{};st.skCur[sN]=+e.target.value;if(+(st.skTgt||{})[sN]<+e.target.value){st.skTgt=st.skTgt||{};st.skTgt[sN]=+e.target.value}save();renderMasters()};
+  });
+  $$('select[data-msk-tgt]').forEach(sel=>{
+    const [mN,sN]=sel.dataset.mskTgt.split('|'); const st=maState(mN);
+    const cur=+((st.skCur||{})[sN]??1);
+    sel.value=Math.min(Math.max(+((st.skTgt||{})[sN]??cur),cur),DATA.masters[mN].sk[sN].max);
+    sel.onchange=e=>{st.skTgt=st.skTgt||{};st.skTgt[sN]=+e.target.value;save();renderMasters()};
+  });
+}
+/* ============ opportunities ============ */
+function affordability(needs){
+  // needs: {invKey: qty}; returns {pct, missing:[{k,qty}]}
+  let pct=1; const missing=[];
+  for(const [k,q] of Object.entries(needs)){
+    if(q<=0)continue;
+    const own=invOf(k);
+    const p=Math.min(1,own/q);
+    if(p<pct)pct=p;
+    if(own<q)missing.push([k,q-own]);
+  }
+  return {pct,missing};
+}
+const INV_LABELS={bread:'Bread',wood:'Wood',stone:'Stone',iron:'Iron',tg:'Truegold',tt:'Tempered TG',spd:'Speedup min',sat:'Satin',gt:'Gilded Threads',av:"Artisan's Vision",cg:'Charm Guides',cd:'Charm Designs',xp:'Enhancement XP',fh:'Forgehammers',mi:'Mithril',mg:'Mythic Gear',wd:'Widgets',hxp:'Hero XP',shR:'Rare Shards',shE:'Epic Shards',shM:'Mythic Shards',emb:'Master Emblems',ms:'Manuscripts'};
+function collectOpps(){
+  const opps=[];
+  // buildings: next step of each building with tgt>cur
+  for(const bld of BLD_NAMES){
+    const rows=DATA.buildings[bld], ci=bCur(bld), ti=Math.min(Math.max(bTgt(bld),ci),rows.length-1);
+    if(ti<=ci)continue;
+    const r=rows[ci+1];
+    const pts=r.tg*EV.tg+r.tt*EV.ttg+Math.round(buffedTime(r.t)/60)*EV.spmin;
+    opps.push({label:`${bld} → ${bLabel(bld,r.l)}`,cat:'Buildings',day:DAYS.build.days,pts,
+      needs:{bread:r.b,wood:r.w,stone:r.s,iron:r.i,tg:r.tg,tt:r.tt,spd:Math.ceil(buffedTime(r.t)/60)}});
+  }
+  // governor gear: next step per piece (dedupe identical steps)
+  const ggNext={};
+  for(const [name] of GG_PIECES){
+    const ci=ggCur(name), ti=Math.max(ggTgt(name),ci);
+    if(ti<=ci)continue;
+    const g=DATA.govGear[ci+1];
+    const key=g.s;
+    ggNext[key]=ggNext[key]||{count:0,g,idx:ci+1};
+    ggNext[key].count++;
+  }
+  for(const [step,o] of Object.entries(ggNext)){
+    const sc=EV.gearScore[o.idx];
+    opps.push({label:`Governor gear → ${step}${o.count>1?` (×${o.count} pieces)`:''}`,cat:'Gov Gear',day:DAYS.gear.days,
+      pts:sc!=null?sc*EV.gearRate*o.count:0,ptsUnknown:sc==null,
+      needs:{sat:o.g.sat*o.count,gt:o.g.gt*o.count,av:o.g.av*o.count}});
+  }
+  // charms: next level per slot (dedupe by level)
+  const chNext={};
+  for(const [name] of GG_PIECES)for(let s=1;s<=3;s++){
+    const k=name+'-'+s, cur=chCur(k), tgt=Math.max(chTgt(k),cur);
+    if(tgt<=cur)continue;
+    const lv=cur+1;
+    chNext[lv]=(chNext[lv]||0)+1;
+  }
+  for(const [lv,count] of Object.entries(chNext)){
+    const c=DATA.charms[lv-1], sc=EV.charmScore[lv-1];
+    opps.push({label:`Charm → Lv ${lv}${count>1?` (×${count} slots)`:''}`,cat:'Charms',day:DAYS.charm.days,
+      pts:sc!=null?sc*EV.charmRate*count:0,ptsUnknown:sc==null,
+      needs:{cg:c.g*count,cd:c.d*count}});
+  }
+  // hero gear: next mastery level + next level milestone per piece (dedupe)
+  const mNext={};
+  for(const [name] of HG_PIECES){
+    const mcur=hgV('mcur',name,0), mtgt=Math.max(hgV('mtgt',name,mcur),mcur);
+    if(mtgt<=mcur)continue;
+    const lv=mcur+1;
+    mNext[lv]=(mNext[lv]||0)+1;
+  }
+  for(const [lv,count] of Object.entries(mNext)){
+    const r=DATA.mastery[lv-1];
+    opps.push({label:`Mastery Forging → M${lv}${count>1?` (×${count} pieces)`:''}`,cat:'Hero Gear',day:DAYS.hgear.days,
+      pts:r.fh*EV.forgehammer*count,
+      needs:{fh:r.fh*count,mg:r.mg*count}});
+  }
+  // heroes: next ascension tier per planned hero
+  for(const row of (S.hero.rows||[])){
+    const cur=+row.cur, tgt=Math.max(+row.tgt,cur);
+    if(tgt<=cur)continue;
+    const h=DATA.roster.find(x=>x.n===row.n); const rar=h?h.r:'Mythic';
+    let sh=DATA.asc[cur+1].sh;
+    if(h&&cur<0&&h.u!==10)sh+=h.u-10;
+    const spec=Math.max(0,+row.spec||0);
+    const fromGen=Math.max(0,sh-spec);
+    const needs={}; if(fromGen>0&&h&&!h.so)needs['sh'+rar[0]]=fromGen;
+    const shortSpec=(h&&h.so)?Math.max(0,sh-spec):0;
+    opps.push({label:`${row.n} → ${DATA.asc[cur+1].s}`,cat:'Heroes',day:DAYS.hero.days,
+      pts:sh*EV.shard[rar],needs,specNote:shortSpec?`${fmt(shortSpec)} hero-specific shards short (can't use general)`:null,
+      forceShort:shortSpec>0});
+  }
+  // masters: next breakthrough per master
+  for(const [mName,m] of Object.entries(DATA.masters)){
+    const st=maState(mName);
+    const relCur=Math.min(Math.max(+st.relCur||0,0),100);
+    const relTgt=Math.min(Math.max(+(st.relTgt??relCur),relCur),100);
+    const next=m.br.find(b=>(b.lv>relCur||(b.lv===relCur&&!st.paid&&relTgt>relCur))&&b.lv<=relTgt);
+    if(next)opps.push({label:`${mName} → breakthrough Rel. ${next.lv}`,cat:'Masters',day:DAYS.master.days,
+      pts:next.e*EV.emblem,needs:{emb:next.e}});
+  }
+  return opps;
+}
+function renderOpps(){
+  const el=$('#tab-opps');
+  const opps=collectOpps().map(o=>{
+    const a=affordability(o.needs||{});
+    if(o.forceShort)a.pct=Math.min(a.pct,0.01);
+    return {...o,...a};
+  });
+  const ready=opps.filter(o=>o.pct>=1).sort((a,b)=>b.pts-a.pts);
+  const near=opps.filter(o=>o.pct>=0.5&&o.pct<1).sort((a,b)=>b.pts-a.pts);
+  const far=opps.filter(o=>o.pct<0.5).sort((a,b)=>b.pts-a.pts);
+  const render=o=>`<div class="opp">
+    <div class="opp-pts num">${o.ptsUnknown?'? pts':fmtShort(o.pts)+' pts'}</div>
+    <div class="opp-main"><b>${o.label}</b> <span style="color:var(--dim);font-size:11.5px">· ${o.cat}</span><br>
+      ${o.pct>=1?`<span class="opp-have">✓ affordable with current inventory</span>`:`<span class="opp-miss">missing: ${(o.missing||[]).slice(0,4).map(([k,q])=>`${fmtShort(q)} ${INV_LABELS[k]||k}`).join(', ')||'—'}</span>`}
+      ${o.specNote?`<br><span class="opp-miss">${o.specNote}</span>`:''}
+      <br><span class="opp-day">📅 ${o.day}</span></div>
+    <div style="min-width:70px;text-align:right;font-size:12px;color:${o.pct>=1?'var(--green)':o.pct>=0.5?'var(--amber)':'var(--red)'}" class="num">${Math.floor(o.pct*100)}%</div>
+  </div>`;
+  el.innerHTML=`<div class="card"><h2>Opportunities — best points for what you can afford</h2>
+    <p class="hint">The immediate next step of everything you've planned, checked against your Inventory tab and ranked by event points. Speedup minutes count toward building affordability, so keep the inventory current — recommendations are only as honest as your numbers. Steps with unpublished scores show "? pts".</p>
+    <h3>✅ Affordable now (${ready.length})</h3>
+    ${ready.length?ready.map(render).join(''):'<p class="hint">Nothing fully affordable — check near misses below or update your inventory.</p>'}
+    <h3>🎯 Near misses — 50%+ affordable (${near.length})</h3>
+    ${near.length?near.map(render).join(''):'<p class="hint">None yet.</p>'}
+    ${far.length?`<h3>Further out (${far.length})</h3>${far.slice(0,10).map(render).join('')}`:''}
+  </div>`;
+}
+/* ============ reference ============ */
+const REF_SETS={};
+for(const b of BLD_NAMES)REF_SETS['Building: '+b]=()=>refBuilding(b);
+Object.assign(REF_SETS,{
+  'Governor Gear steps':refGovGear,'Governor Charms':refCharms,
+  'Hero Gear enhancement (1–200)':refHeroGear,'Mastery Forging':refMastery,'Exclusive Gear':refExcl,
+  'Hero roster':refRoster,'Hero XP (1–80)':refHeroXP,'Hero Ascension':refAsc,'Master breakthroughs & skills':refMasters,
+  'Event scoring rates (SG & KvK Prep)':refEvents,
+  'Data notes & caveats':refNotes,'Sources':refSources
+});
+function tbl(head,rows){return `<div class="tbl-wrap"><table><thead><tr>${head.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table></div>`}
+function refBuilding(b){
+  return tbl(['Level','Bread','Wood','Stone','Iron','TG','Tempered','Time','Requires'],
+    DATA.buildings[b].map(r=>`<tr><td>${bLabel(b,r.l)}${badge(r.c,r.n)}</td><td class="res-b num">${fmtShort(r.b)}</td><td class="res-w num">${fmtShort(r.w)}</td><td class="res-s num">${fmtShort(r.s)}</td><td class="res-i num">${fmtShort(r.i)}</td><td class="num">${r.tg||''}</td><td class="num">${r.tt||''}</td><td>${fmtTime(r.t)}</td><td class="prereq">${r.p.map(p=>p[0]+' '+p[1]).join(', ')}</td></tr>`));
+}
+function refGovGear(){
+  return tbl(['Step','Satin','Gilded Threads',"Artisan's Vision",'Cumulative stat %','Set bonus %','Piece power'],
+    DATA.govGear.map(g=>`<tr><td>${g.s}${badge(g.c,g.n)}</td><td class="num">${fmt(g.sat)}</td><td class="num">${fmt(g.gt)}</td><td class="num">${fmt(g.av)}</td><td class="num">${g.st??''}%</td><td class="num">${g.sb??''}%</td><td class="num">${g.pw?fmt(g.pw):''}</td></tr>`));
+}
+function refCharms(){
+  return tbl(['Level','Charm Guides','Charm Designs','Cumulative stat %'],
+    DATA.charms.map(c=>`<tr><td>Lv ${c.l}${badge(c.c)}</td><td class="num">${fmt(c.g)}</td><td class="num">${fmt(c.d)}</td><td class="num">${c.st}%</td></tr>`));
+}
+function refHeroGear(){
+  return tbl(['Level','Enhancement XP','Mithril','Mythic Gear',''],
+    DATA.heroGear.map(r=>`<tr><td>${r.l}${badge(r.c,r.n)}</td><td class="num">${fmt(r.xp)}</td><td class="num">${r.mi||''}</td><td class="num">${r.mg||''}</td><td class="prereq">${r.n}</td></tr>`));
+}
+function refMastery(){
+  return tbl(['Mastery level','Forgehammers','Mythic Gear','Effect'],
+    DATA.mastery.map(r=>`<tr><td>${r.l}</td><td class="num">${fmt(r.fh)}</td><td class="num">${r.mg||''}</td><td class="prereq">${r.st}</td></tr>`));
+}
+function refExcl(){
+  return tbl(['Level','Widgets'],DATA.excl.map(r=>`<tr><td>${r.l}</td><td class="num">${r.w}</td></tr>`));
+}
+function refRoster(){
+  return tbl(['Hero','Rarity','Generation','Class','Shards'],
+    DATA.roster.map(h=>`<tr><td>${h.n}</td><td>${h.r}</td><td class="num">${h.g}</td><td>${h.cl||''}</td><td class="prereq">${h.so?'Hero-specific only':'General OK'}${h.u!==10?` · unlock ${h.u}`:''}</td></tr>`));
+}
+function refHeroXP(){
+  let cum=0;
+  return tbl(['Level','XP to reach','Cumulative'],DATA.heroXP.map(r=>{cum+=r.xp;return `<tr><td>${r.l}${badge(r.c)}</td><td class="num">${fmt(r.xp)}</td><td class="num">${fmt(cum)}</td></tr>`}));
+}
+function refAsc(){
+  let cum=0;
+  return tbl(['Step','Shards','Cumulative'],DATA.asc.map(a=>{cum+=a.sh;return `<tr><td>${a.s}</td><td class="num">${a.sh}</td><td class="num">${fmt(cum)}</td></tr>`}));
+}
+function refMasters(){
+  let out='';
+  for(const [mN,m] of Object.entries(DATA.masters)){
+    out+=`<h3>${mN}</h3>`+tbl(['Breakthrough','Master Emblems'],m.br.map(b=>`<tr><td>Rel. Lv ${b.lv}${badge(b.c)}</td><td class="num">${b.e}</td></tr>`));
+    out+=tbl(['Skill','Unlock','Max','Total manuscripts','Total research XP'],Object.entries(m.sk).map(([sN,s])=>`<tr><td>${sN}</td><td>${s.unlock}</td><td class="num">${s.max}</td><td class="num">${fmt(s.ms.reduce((a,b)=>a+b,0))}</td><td class="num">${fmt(s.xp.reduce((a,b)=>a+b,0))}</td></tr>`));
+  }
+  return out;
+}
+function refEvents(){
+  const rows=[
+    ['Speedups (any type)','30 pts / minute','SG Days 1, 2, 5, 7','KvK Prep Days 1, 2, 5','Also research/training/learning speedups'],
+    ['Truegold','2,000 each','SG Days 1, 2, 5, 7','KvK Prep Days 1, 2, 5','Used on building upgrades'],
+    ['Tempered Truegold','30,000 each','SG Days 1, 2, 7 (Day 5 disputed)','KvK Prep Days 1, 2, 5','Requires TG8'],
+    ['Mithril','40,000 each','SG Days 2, 4, 5','KvK Prep Days 4, 5','Officer Project T1: 60,000'],
+    ['Forgehammer','4,000 each','SG Days 2, 4, 5','KvK Prep Days 4, 5','Officer Project: 6,000'],
+    ['Widget','8,000 each','SG Days 2, 4, 5','KvK Prep Days 4, 5','Officer Project: 12,000'],
+    ['Hero Shard — Rare','350 each','SG Days 2, 3, 7','KvK Prep Days 2, 3','Must be used to ascend'],
+    ['Hero Shard — Epic','1,220 each','SG Days 2, 3, 7','KvK Prep Days 2, 3',''],
+    ['Hero Shard — Mythic','3,040 each','SG Days 2, 3, 7','KvK Prep Days 2, 3',''],
+    ['Master Emblem','6,000 each','SG Days 2, 3','KvK Prep Days 2, 3',''],
+    ["Master's Manuscript",'60 each','SG Days 2, 3','KvK Prep Days 2, 3',''],
+    ['Governor gear level-up','Gear Score × 36','SG Days 6, 7','KvK Prep Day 5','Scores published through Gold 3★; Officer Project T2 = ×70'],
+    ['Charm level-up','Charm Score × 70','SG Days 1, 3, 4','KvK Prep Days 1, 3, 4','Scores published through Lv 11; same ×70 in Officer Project T1'],
+    ['Hero XP','Not scored','—','—','No event scores hero leveling'],
+    ['Enhancement XP','Not scored','—','—','Hero gear points flow via Forgehammer/Mithril/Widget only'],
+    ['Resources spent on builds','Not scored','—','—','Only gathering scores (SG Day 7 / KvK Days 2, 4, 5)']
+  ];
+  return `<p class="hint">Verified July 2026 against kingshotoptimizer.com event guides + kingshotdata.com task lists. SG and KvK Prep share material rates; only the active days differ. Armament Competition pays far less for the same items (speedups 1 pt/min) — avoid spending there.</p>`+
+    tbl(['Item','Rate','Strongest Governor','KvK Prep','Notes'],rows.map(r=>`<tr><td>${r[0]}</td><td class="num">${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td class="prereq">${r[4]}</td></tr>`));
+}
+function refNotes(){
+  const notes=[
+    'All costs are BASE values from datamined community tables. Building costs drop in game with cost-reduction buffs; material costs for gear/charms/heroes are fixed.',
+    'Construction speed: build time = base ÷ (1 + speed%). Read your total at Power score → Bonus Overview → Growth → Construction Speed. Double Time decree is separate (×0.8) and NOT in that number.',
+    'TC11 stone cost (20,000) looks anomalous vs neighbors but both sources list it identically.',
+    'Infirmary unlock: one source says TC 8, another TC 9.',
+    'RESOLVED (July 2026): Governor gear Red T3/T4 costs use current values from kingshotoptimizer.com + kingshot.net; older sources list ~6–11% higher pre-rebalance values.',
+    'RESOLVED (July 2026): Hero gear levels 121–139 XP confirmed vs kingshotoptimizer.com (0→200 = 574,370 XP); kingshotdata lists 50/level higher.',
+    'RESOLVED (July 2026): Pan (275) & Cassia (1,820) Master Emblem totals confirmed by kingshotdata + kingshot.net.',
+    'Master Research tree (post Rel. 100) consumes emblems but per-node costs are unpublished.',
+    'Hero XP rows 47 and 73 may be display-rounded on the source.',
+    'Charm slots per gear piece: 3 (18 total) — confirmed in-game.',
+    'Buildings continue past TG8 (TG9–TG10 exist); planner covers through TG8. Academy has no TG levels.',
+    'Hero roster current through Gen 7 (Wee & Woo, May 2026). Amadeus/Helga: hero-specific shards only; Amadeus unlock 20, Chenko 40.',
+    'Set bonus calc assumes higher tiers count toward lower-tier sets (3pc = 3rd-strongest piece, 6pc = weakest piece).',
+    'Event points: gear level-up scores unpublished above Gold 3★, charm scores above Lv 11 — those points display as floors ("+" or "?").'
+  ];
+  return '<ul style="padding-left:20px;font-size:13.5px;color:var(--muted)">'+notes.map(n=>`<li style="margin:6px 0">${n}</li>`).join('')+'</ul>';
+}
+function refSources(){
+  return '<ul style="padding-left:20px;font-size:13px">'+DATA.meta.sources.map(s=>`<li style="margin:4px 0"><a style="color:var(--blue)" href="${s}" target="_blank">${s}</a></li>`).join('')+'</ul>';
+}
+let refSel=Object.keys(REF_SETS)[0];
+function renderReference(){
+  const el=$('#tab-reference');
+  el.innerHTML=`<div class="card"><h2>Reference index — every level, every cost</h2>
+    <div class="controls"><div class="field"><label>Table</label><select id="ref-sel">${Object.keys(REF_SETS).map(k=>`<option ${k===refSel?'selected':''}>${k}</option>`).join('')}</select></div></div>
+    <div id="ref-out">${REF_SETS[refSel]()}</div></div>`;
+  $('#ref-sel').onchange=e=>{refSel=e.target.value;renderReference()};
+}
+/* ============ export report ============ */
+function rpRow(cells,cls){return `<tr${cls?` class="${cls}"`:''}>${cells.map(c=>`<td>${c}</td>`).join('')}</tr>`}
+function buildReport(){
+  const today=new Date().toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'});
+  let h=`<h1>⚔️ Kingshot Upgrade Plan</h1><div class="rp-sub">Generated ${today} · reflects levels &amp; targets set in the planner · SG = Strongest Governor, KvK = KvK Prep (identical material rates; days differ)</div>`;
+  const shop={}; let grandPts=0, ptsFloor=false;
+  const addShop=(k,label,qty)=>{if(qty>0){shop[k]=shop[k]||{label,qty:0};shop[k].qty+=qty}};
+  // buildings
+  let bRows='',bt={b:0,w:0,s:0,i:0,tg:0,tt:0,t:0,pts:0},any=false;
+  for(const bld of BLD_NAMES){
+    const rows=DATA.buildings[bld],ci=bCur(bld),ti=Math.min(Math.max(bTgt(bld),ci),rows.length-1);
+    if(ti<=ci)continue;
+    any=true;
+    const t=bldRange(bld,ci,ti);
+    const adj=buffedTime(t.t);
+    const pts=t.tg*EV.tg+t.tt*EV.ttg+Math.round(adj/60)*EV.spmin;
+    bt.b+=t.b;bt.w+=t.w;bt.s+=t.s;bt.i+=t.i;bt.tg+=t.tg;bt.tt+=t.tt;bt.t+=adj;bt.pts+=pts;
+    bRows+=rpRow([`${bld}: ${ci<0?'Not built':bLabel(bld,rows[ci].l)} → ${bLabel(bld,rows[ti].l)}`,fmtShort(t.b),fmtShort(t.w),fmtShort(t.s),fmtShort(t.i),t.tg?fmt(t.tg):'—',t.tt?fmt(t.tt):'—',fmtTime(adj),fmtShort(pts)]);
+  }
+  if(any){
+    bRows+=rpRow(['Total',fmtShort(bt.b),fmtShort(bt.w),fmtShort(bt.s),fmtShort(bt.i),fmt(bt.tg),fmt(bt.tt),fmtTime(bt.t),fmtShort(bt.pts)],'total-row');
+    h+=`<h2>Buildings — scores ${DAYS.build.days}</h2><table><thead><tr><th>Upgrade</th><th>Bread</th><th>Wood</th><th>Stone</th><th>Iron</th><th>TG</th><th>Tempered</th><th>Buffed time</th><th>SG/KvK pts</th></tr></thead><tbody>${bRows}</tbody></table><div class="rp-note">Times use your +${S.buffs.cs||0}% construction speed${S.buffs.dt?' + Double Time':''}. ${DAYS.build.rec}</div>`;
+    addShop('bread','Bread',bt.b);addShop('wood','Wood',bt.w);addShop('stone','Stone',bt.s);addShop('iron','Iron',bt.i);addShop('tg','Truegold',bt.tg);addShop('tt','Tempered Truegold',bt.tt);addShop('spd','Speedup minutes',Math.ceil(bt.t/60));grandPts+=bt.pts;
+  }
+  // governor gear
+  let gRows='',gt2={sat:0,gt:0,av:0,pts:0,unk:0},anyG=false;
+  const curIdx=[],tgtIdx=[];
+  for(const [name,cls] of GG_PIECES){
+    const ci=ggCur(name),ti=Math.max(ggTgt(name),ci);
+    curIdx.push(ci);tgtIdx.push(ti);
+    if(ti<=ci)continue;
+    anyG=true;
+    const t=ggRange(ci,ti),p=ggPts(ci,ti);
+    gt2.sat+=t.sat;gt2.gt+=t.gt;gt2.av+=t.av;gt2.pts+=p.pts;gt2.unk+=p.unk;
+    gRows+=rpRow([`${name} (${cls}): ${ci<0?'Not forged':DATA.govGear[ci].s} → ${DATA.govGear[ti].s}`,fmtShort(t.sat),fmt(t.gt),fmt(t.av),fmtShort(p.pts)+(p.unk?'+':'')]);
+  }
+  if(anyG){
+    const sbC=setBonus(curIdx),sbT=setBonus(tgtIdx);
+    gRows+=rpRow(['Total',fmtShort(gt2.sat),fmt(gt2.gt),fmt(gt2.av),fmtShort(gt2.pts)+(gt2.unk?'+':'')],'total-row');
+    h+=`<h2>Governor Gear — scores ${DAYS.gear.days}</h2><table><thead><tr><th>Piece</th><th>Satin</th><th>Gilded Threads</th><th>Artisan's Vision</th><th>SG/KvK pts</th></tr></thead><tbody>${gRows}</tbody></table><div class="rp-note">Set bonuses: 3-pc Defense ${sbC.p3}% → ${sbT.p3}%, 6-pc Attack ${sbC.p6}% → ${sbT.p6}%.${gt2.unk?' "+" = unpublished level-up scores above Gold 3★ — points are a floor.':''}</div>`;
+    addShop('sat','Satin',gt2.sat);addShop('gt','Gilded Threads',gt2.gt);addShop('av',"Artisan's Vision",gt2.av);grandPts+=gt2.pts;if(gt2.unk)ptsFloor=true;
+  }
+  // charms
+  let cg=0,cd=0,cp=0,cunk=0,slotsPending=0;
+  for(const [name] of GG_PIECES)for(let s=1;s<=3;s++){
+    const k=name+'-'+s,cur=chCur(k),tgt=Math.max(chTgt(k),cur);
+    if(tgt<=cur)continue;
+    slotsPending++;
+    const r=charmRange(cur,tgt);cg+=r.g;cd+=r.d;
+    const p=charmPts(cur,tgt);cp+=p.pts;cunk+=p.unk;
+  }
+  if(slotsPending){
+    h+=`<h2>Governor Charms — scores ${DAYS.charm.days}</h2><table><thead><tr><th>Plan</th><th>Charm Guides</th><th>Charm Designs</th><th>SG/KvK pts</th></tr></thead><tbody>${rpRow([`${slotsPending} slot(s) upgrading`,fmt(cg),fmt(cd),fmtShort(cp)+(cunk?'+':'')],'total-row')}</tbody></table>`;
+    addShop('cg','Charm Guides',cg);addShop('cd','Charm Designs',cd);grandPts+=cp;if(cunk)ptsFloor=true;
+  }
+  // hero gear
+  let hgT={xp:0,mi:0,mg:0,fh:0},anyH=false,hgRows='';
+  for(const [name] of HG_PIECES){
+    const cur=Math.min(hgV('cur',name,0),200),tgt=Math.min(Math.max(hgV('tgt',name,cur),cur),200);
+    const mcur=Math.min(hgV('mcur',name,0),20),mtgt=Math.min(Math.max(hgV('mtgt',name,mcur),mcur),20);
+    if(tgt<=cur&&mtgt<=mcur)continue;
+    anyH=true;
+    const t=hgRange(cur,tgt),m=masteryRange(mcur,mtgt);
+    hgT.xp+=t.xp;hgT.mi+=t.mi;hgT.mg+=t.mg+m.mg;hgT.fh+=m.fh;
+    hgRows+=rpRow([`${name}: L${cur}/M${mcur} → L${tgt}/M${mtgt}`,fmt(t.xp),fmt(t.mi),fmt(t.mg+m.mg),fmt(m.fh),fmtShort(m.fh*EV.forgehammer+t.mi*EV.mithril)]);
+  }
+  if(anyH){
+    hgRows+=rpRow(['Total',fmt(hgT.xp),fmt(hgT.mi),fmt(hgT.mg),fmt(hgT.fh),fmtShort(hgT.fh*EV.forgehammer+hgT.mi*EV.mithril)],'total-row');
+    h+=`<h2>Hero Gear — scores ${DAYS.hgear.days}</h2><table><thead><tr><th>Piece</th><th>Enh. XP</th><th>Mithril</th><th>Mythic Gear</th><th>Forgehammers</th><th>SG/KvK pts</th></tr></thead><tbody>${hgRows}</tbody></table>`;
+    addShop('xp','Enhancement XP',hgT.xp);addShop('mi','Mithril',hgT.mi);addShop('mg','Mythic Gear',hgT.mg);addShop('fh','Forgehammers',hgT.fh);
+    grandPts+=hgT.fh*EV.forgehammer+hgT.mi*EV.mithril;
+  }
+  // heroes
+  const hrows=(S.hero.rows||[]).filter(r=>+r.tgt>+r.cur);
+  if(hrows.length){
+    let hr='',genTot={Rare:0,Epic:0,Mythic:0};
+    for(const row of hrows){
+      const {h,need,fromSpec,gen,noGen}=heroNeed(row);
+      const rar=h?h.r:'Mythic';
+      genTot[rar]+=gen;
+      grandPts+=need*EV.shard[rar];
+      hr+=rpRow([`${row.n}: ${+row.cur<0?'Not recruited':DATA.asc[+row.cur].s} → ${DATA.asc[+row.tgt].s}`,fmt(need),fmt(fromSpec),gen?fmt(gen):noGen?fmt(noGen)+' specific short':'0',fmtShort(need*EV.shard[rar])]);
+    }
+    h+=`<h2>Heroes — scores ${DAYS.hero.days}</h2><table><thead><tr><th>Hero</th><th>Shards</th><th>From specific</th><th>From general</th><th>SG/KvK pts</th></tr></thead><tbody>${hr}</tbody></table>`;
+    addShop('shR','General Rare Shards',genTot.Rare);addShop('shE','General Epic Shards',genTot.Epic);addShop('shM','General Mythic Shards',genTot.Mythic);
+  }
+  const hh=S.hero;
+  const hxp=heroXpRange(Math.min(hh.lvCur,hh.lvTgt),hh.lvTgt)*Math.max(1,hh.lvN);
+  const hwd=exclRange(Math.min(hh.exCur,hh.exTgt),hh.exTgt)*Math.max(1,hh.exN);
+  if(hxp||hwd){
+    let hr='';
+    if(hxp)hr+=rpRow([`Leveling: ${hh.lvN} hero(es) L${hh.lvCur} → L${hh.lvTgt}`,fmt(hxp)+' Hero XP','0 (not scored)']);
+    if(hwd)hr+=rpRow([`Exclusive gear: ${hh.exN} hero(es) L${hh.exCur} → L${hh.exTgt}`,fmt(hwd)+' Widgets',fmtShort(hwd*EV.widget)]);
+    h+=`<h2>Hero Leveling &amp; Exclusive Gear</h2><table><thead><tr><th>Plan</th><th>Materials</th><th>SG/KvK pts</th></tr></thead><tbody>${hr}</tbody></table>`;
+    addShop('hxp','Hero XP',hxp);addShop('wd','Widgets',hwd);
+    grandPts+=hwd*EV.widget;
+  }
+  // masters
+  let mRows='',mE=0,mM=0,anyM=false;
+  for(const [mName,m] of Object.entries(DATA.masters)){
+    const st=maState(mName);
+    const relCur=Math.min(Math.max(+st.relCur||0,0),100);
+    const relTgt=Math.min(Math.max(+(st.relTgt??relCur),relCur),100);
+    let emb=0;for(const b of m.br){if(b.lv>relCur&&b.lv<=relTgt)emb+=b.e;else if(b.lv===relCur&&!st.paid&&relTgt>relCur)emb+=b.e}
+    let ms=0;
+    for(const [sName,sk] of Object.entries(m.sk)){
+      const cur=Math.min(Math.max(+((st.skCur||{})[sName]??1),1),sk.max);
+      const tgt=Math.min(Math.max(+((st.skTgt||{})[sName]??cur),cur),sk.max);
+      for(let L=cur+1;L<=tgt;L++)ms+=sk.ms[L-2];
+    }
+    if(!emb&&!ms)continue;
+    anyM=true;mE+=emb;mM+=ms;
+    mRows+=rpRow([`${mName} (Rel. ${relCur} → ${relTgt})`,fmt(emb),fmt(ms),fmtShort(emb*EV.emblem+ms*EV.manuscript)]);
+  }
+  if(anyM){
+    mRows+=rpRow(['Total',fmt(mE),fmt(mM),fmtShort(mE*EV.emblem+mM*EV.manuscript)],'total-row');
+    h+=`<h2>Masters — scores ${DAYS.master.days}</h2><table><thead><tr><th>Master</th><th>Emblems</th><th>Manuscripts</th><th>SG/KvK pts</th></tr></thead><tbody>${mRows}</tbody></table>`;
+    addShop('emb','Master Emblems',mE);addShop('ms',"Master's Manuscripts",mM);grandPts+=mE*EV.emblem+mM*EV.manuscript;
+  }
+  // shopping list with inventory net
+  const shopRows=Object.entries(shop).map(([k,v])=>{
+    const own=invOf(k),short=Math.max(0,v.qty-own);
+    return rpRow([v.label,fmt(v.qty),fmt(own),short?fmt(short):'✓']);
+  }).join('');
+  if(shopRows)h+=`<h2>Shopping List — needed vs owned</h2><table><thead><tr><th>Material</th><th>Needed</th><th>Owned</th><th>Still to acquire</th></tr></thead><tbody>${shopRows}${rpRow(['Total SG / KvK Prep event points','','',fmtShort(grandPts)+(ptsFloor?'+':'')],'total-row')}</tbody></table>`;
+  h+=`<div class="rp-note" style="margin-top:10px">Point rates verified July 2026 (kingshotoptimizer.com + kingshotdata.com). SG &amp; KvK Prep share material rates — spend on the matching event day (recommendations under each section). Officer Project pays more for Forgehammers/Mithril/Widgets/gear score. Building times reflect your construction speed buffs.</div>`;
+  return h;
+}
+function openReport(){
+  document.getElementById('report-box').innerHTML=buildReport();
+  document.getElementById('report-overlay').classList.add('open');
+}
+function downloadReport(){
+  const css=`body{font-family:'Segoe UI',system-ui,sans-serif;font-size:12.5px;line-height:1.4;color:#1a1a1a;max-width:820px;margin:20px auto;padding:0 14px}h1{font-size:19px;margin-bottom:2px}h2{font-size:13.5px;margin:14px 0 5px;color:#8a6d1f;border-bottom:2px solid #d9a93f;padding-bottom:2px}.rp-sub{color:#666;font-size:11px;margin-bottom:14px}table{width:100%;border-collapse:collapse;font-size:11.5px}th{background:#f3ead2;color:#5a4a1a;padding:4px 7px;text-align:right;font-size:10px;text-transform:uppercase}th:first-child,td:first-child{text-align:left}td{padding:3px 7px;border-bottom:1px solid #e5e0d0;text-align:right;white-space:nowrap}tr.total-row td{border-top:2px solid #d9a93f;font-weight:700;color:#6b520f;background:#faf5e6}.rp-note{color:#777;font-size:10.5px;margin-top:3px}`;
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Kingshot Upgrade Plan</title><style>${css}</style></head><body>${buildReport()}</body></html>`;
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([html],{type:'text/html'}));
+  a.download='Kingshot Upgrade Plan.html';
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+}
+/* ============ profile import ============ */
+document.getElementById('profile-file').addEventListener('change',e=>{
+  const f=e.target.files[0]; if(!f)return;
+  const rd=new FileReader();
+  rd.onload=()=>{
+    try{
+      const p=JSON.parse(rd.result);
+      if(!p||typeof p!=='object'||!p.inv)throw new Error('not a planner profile');
+      S=Object.assign({},clone(DEFAULT_STATE),p);
+      for(const k of Object.keys(DEFAULT_STATE)) if(typeof DEFAULT_STATE[k]==='object'&&!Array.isArray(DEFAULT_STATE[k])) S[k]=Object.assign({},clone(DEFAULT_STATE[k]),p[k]||{});
+      save();renderAll();
+      alert('Profile loaded.');
+    }catch(err){alert('Could not load profile: '+err.message)}
+  };
+  rd.readAsText(f);
+  e.target.value='';
+});
+/* ============ boot ============ */
+$('#main').innerHTML=TABS.map(([id])=>`<section class="tab" id="tab-${id}"></section>`).join('');
+$('#footer').innerHTML=`Fan-made planner · data compiled ${DATA.meta.researched} from community databases (kingshotdata.com, kingshot.net, kingshotwiki.com, kingshotoptimizer.com and others — full list under Reference → Sources). Not affiliated with Century Games. Game balance changes over time — spot-check big investments in game first.`;
+renderAll();
+</script>
+</body>
+</html>
